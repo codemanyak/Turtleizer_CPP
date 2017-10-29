@@ -6,19 +6,20 @@
  * Fachgebiet Angewandte Informatik
  * Modul Programmierung
  *
- * Objektklasse, die eine Turtle innerhalb des für eine
- * einfache C/C++-Umgebung nachgebildeten Turtleizers des
- * Structorizers (http://structorizer.fisch.lu) repräsentiert.
- * Dies soll zulassen, dass mehrere separat ansteuerbare (und in
- * Unterklassen erweiterbare) Turtle-Objekte erzeugt werden können.
+ * Object class, representing one (of potentially many) Turtles withing the
+ * simple C++ emulation of the Turtleizer module coming with Structorizer
+ * (http://structorizer.fisch.lu).
+ * The intention is that several separately controllable (and subclassible)
+ * Turtle objects may be created to share the drawing area.
  *
- * Thema: Brückenkurs Programmierung / Objektorientierte Programmierung
- * Autor: Kay Gürtzig
- * Version: 6
+ * Theme: Prep course Programming Fundamentals / Object-oriented Programming
+ * Author: Kay Gürtzig
+ * Version: 7 (covering capabilities of Structorizer 3.27)
  *
- * Historie (oben ergänzen):
+ * History (add on top):
  * --------------------------------------------------------
- * 09.12.2016	erstellt
+ * 2017-10-29	new functions getX(), getY(), and getOrientation()
+ * 2016-12-09	created
  */
 
 #include <Windows.h>
@@ -83,6 +84,12 @@ public:
 	void setPenColor(unsigned char red, unsigned char green, unsigned char blue);
 	// Draws this turtle and its trayectory in 2D graphics gr
 	void draw(Graphics& gr) const;
+	// Returns the current horizontal pixel position in floating-point resolution
+	double getX() const;
+	// Returns the current vertical pixel position in floating-point resolution
+	double getY() const;
+	// Returns the current orientation in degrees from North (clockwise = positive)
+	double getOrientation() const;
 
 protected:
 	// Typename for the list of tracked line elements

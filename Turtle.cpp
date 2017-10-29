@@ -3,18 +3,20 @@
  * Fachgebiet Angewandte Informatik
  * Modul Programmierung
  *
- * Objektklasse, die eine Turtle innerhalb des für eine
- * einfache C/C++-Umgebung nachgebildeten Turtleizers des
- * Structorizers (http://structorizer.fisch.lu) repräsentiert.
- * Dies soll zulassen, dass mehrere separat ansteuerbare (und in
- * Unterklassen erweiterbare) Turtle-Objekte erzeugt werden können.
- * Thema: Brückenkurs Programmierung
- * Autor: Kay Gürtzig
- * Version: 6
+ * Object class, representing one (of potentially many) Turtles withing the
+ * simple C++ emulation of the Turtleizer module coming with Structorizer
+ * (http://structorizer.fisch.lu).
+ * The intention is that several separately controllable (and subclassible)
+ * Turtle objects may be created to share the drawing area.
  *
- * Historie (oben ergänzen):
+ * Theme: Prep course Programming Fundamentals / Object-oriented Programming
+ * Author: Kay Gürtzig
+ * Version: 7 (covering capabilities of Structorizer 3.27)
+ *
+ * History (app at top):
  * --------------------------------------------------------
- * 09.12.2016   Erstellt für VERSION 6
+ * 2017-10-29   New methods getX(), getY(), getOrientation() implemented
+ * 2016-12-09   Created für VERSION 6
  */
 
 #define _USE_MATH_DEFINES
@@ -168,6 +170,28 @@ void Turtle::showTurtle(bool show)
 void Turtle::setPenColor(unsigned char red, unsigned char green, unsigned char blue)
 {
 	this->defaultColour = Color(red, green, blue);
+}
+
+// Returns the current horizontal pixel position in floating-point resolution
+double Turtle::getX() const
+{
+	return (double) this->pos.X;
+}
+
+// Returns the current vertical pixel position in floating-point resolution
+double Turtle::getY() const
+{
+	return (double) this->pos.Y;
+}
+
+// Returns the current orientation in degrees from North (clockwise = positive)
+double Turtle::getOrientation() const
+{
+	// TODO: Test the correct results
+	double ori = this->orient;
+	while (ori > 180) { ori -= 360; }
+	while (ori < -180) { ori += 360; }
+	return -ori;
 }
 
 

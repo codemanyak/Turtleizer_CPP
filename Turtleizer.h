@@ -7,36 +7,40 @@
  * Fachgebiet Angewandte Informatik
  * Modul Programmierung
  *
- * Objektklasse, die den Turtleizer des Structorizers
- * (http://structorizer.fisch.lu) ansatzweise für eine
- * einfache C-Umgebung nachbildet
- * Thema: Brückenkurs Programmierung
+ * Object class approximately emulating the Turtleizer component of Structorizer
+ * (http://structorizer.fisch.lu) for a simple C++  environment
+ * Theme: Prep course Programming
  * Autor: Kay Gürtzig
- * Version: 6
+ * Version: 7
  *
- * Nutzung:
- * 1. Bibliothek in (Konsolen-)Anwendung einbinden (z. B. durch
- *    Einrichten eines Verweises innerhalb derselben Projektmappe).
- * 2. Registrieren des Turtleizer-Projektverzeichnisses als zusätzliches Include-Verzeichnisses
- * 3. Verwenden folgender grundsätzlicher Programmstruktur:
+ * Usage:
+ * 1. Configure a link to the compiled library (Turtleizer.lib) in your (Console) application
+ *    (e.g. by establishing a project dependency within the same Solution folder).
+ * 2. Register the Turtleizer project folder as additional include directory
+ * 3. Adhere to the following programming paragigm:
  *
  * #include "Turtleizer.h"
  * int main(int argc, char* argv)
  * {
- *     Turtleizer::startUP();
+ *     // From version 7 on, you may omit this line unless you want to define the initial window size
+ *     Turtleizer::startUP(<width>, <height>);
  *
- *     // Eigentlicher Programmcode wie z. B. aus dem Turtleizer exportiert
- *     // und unter Verwendung der Funktionen:
- *     //		forward(nPixel) oder fd(nPixel)
- *     //		backward(nPixel) oder bk(nPixel)
- *     //		left(degrees) oder rl(degrees)
- *     //		right(degrees) oder rr(degrees)
+ *     // Essential programming code (e.g. as obtained from Turtleizer export to C++)
+ *     // using the following functions:
+ *     //		forward(distPixel) or fd(nPixels)
+ *     //		backward(distPixel) or bk(nPixels)
+ *     //		left(degrees) or rl(degrees)
+ *     //		right(degrees) or rr(degrees)
  *     //		gotoXY(x, y), gotoX(x), gotoY(y)
  *     //		penUp(), penDown()
  *     //		hideTurtle(), showTurtle()
- *     // Die Funktionen forward/fd und backward/bk können mit einem zweiten
- *     // Parameter vom Typ Turtleizer::TurtleColour ausgestattet werden, also
- *     // einem der folgenden Werte (wobei Turtleizer::TC_BLACK der Default ist):
+ *     //       setPenColor(r, g, b)
+ *     //       setBackground(r, g, b)
+ *     //       getX(), getY()
+ *     //       getOrientation()
+ *     // The functions forward/fd und backward/bk may be equipped with a second
+ *     // Argument of type Turtleizer::TurtleColour, i.e. with one of the constants
+ *     // (where Turtleizer::TC_BLACK is the default):
  *     //		Turtleizer::TC_BLACK,
  *     //		Turtleizer::TC_RED,
  *     //		Turtleizer::TC_YELLOW,
@@ -47,32 +51,42 @@
  *     //		Turtleizer::TC_GREY,
  *     //		Turtleizer::TC_ORANGE,
  *     //		Turtleizer::TC_VIOLET
+ *     // Be aware that the functions forward and fd are not exactly equivalent:
+ *     // forward(...) works with an floating-point coordinate model, whereas
+ *     // fd(...) adheres to a strict integer coordinate model which may rapidly
+ *     // lead to noticeable biases, particularly with many short, traversal ways.
+ *     // The same holds for the pair backward / bk, of course.
  *
  *     Turtleizer::awaitClose();
  *     return 0;
  * }
  *
- * Das automatische Window-Update erfolgt anfangs nach jedem Zeichenschritt,
- * wird dann aber zwecks Beschleunigung mit wachsender Zahl der schon gezeichneten
- * Elemente seltener.
- * Mittels updateWindow(false) kann es ganz unterdrückt werden. Durch updateWindow(true)
- * wird es wieder erlaubt. Beide Aufrufe führen ein sofortiges Window-Update aus.
+ * The automatic update of the drawing area is initially done after each drawing step,
+ * but then be done ever less frequently with the growing number of elements (traces)
+ * to be rendered.
+ * By invoking updateWindow(false) the regular update may be suppressed entirely. By
+ * using updateWindow(true) you may re-enable the regular update.
+ * BOTH call induce an immediate window update.
  *
- * Historie (oben ergänzen):
+ * History (add at top):
  * --------------------------------------------------------
- * 09.12.2016   VERSION 6: Dekomposition und API-Erweiterung für mehrere Turtles
- * 07.12.2016   VERSION 5: API-Anpassung an Structorizer 3.25-09: setPenColor, setBackground
- * 02.11.2016   VERSION 4: API-Anpassung an Structorizer 3.25-03: Trennung forward/fd,
- *              Elementanzahlabhängige update-Zyklen eingeführt
- * 07.10.2016   VERSION 3: Neue Methode awaitClose() statt shutDown()
- * 30.05.2015	VERSION 2: Zusatzparameter in Methode refresh(),
- *				neue Methode updateWindow(bool) und	Funktion updateTurtleWindow(bool),
- *				neues Attribut autoUpdate,
- *				neue Klassenkonstante VERSION
- * 29.09.2013	Vollständigung der Kommentierung
- * 27.09.2013	turtleImagePath, makeFilePath() ergänzt
- * 25.09.2013	turtleHeight, turtleWidth ergänzt
- * 20.09.2013	erstellt
+ * 2017-10-29   VERSION 7: API adaptation to Structorizer 3.27:
+ *              New methods/functions getX(), getY(), geOrientation()
+ *              adaptor functions now call startUp themselves if not done
+ *              Comments translated to English, exposed on GitHub
+ * 2016-12-09   VERSION 6: Decomposition and API extension for multiple Turtles
+ * 2016-12-07   VERSION 5: API adaptation to Structorizer 3.25-09: setPenColor, setBackground
+ * 2016-11-02   VERSION 4: API adaptation to Structorizer 3.25-03: separating forward/fd,
+ *              element-count-dependent update cycles introduced
+ * 2016-10-07   VERSION 3: New methode awaitClose() instad of shutDown()
+ * 2015-05-30	VERSION 2: additional arguments in method refresh(),
+ *				new method updateWindow(bool) and function updateTurtleWindow(bool),
+ *				new attribute autoUpdate,
+ *				new class constant VERSION
+ * 2013-09-29	Accomplishemnt of comments
+ * 2013-09-27	turtleImagePath, makeFilePath() added
+ * 2013-09-25.	turtleHeight, turtleWidth added
+ * 2013-09-20	initial version
  */
 
 #include <windows.h>
@@ -102,10 +116,10 @@ public:
 						 WPARAM wParam, LPARAM lParam);
 	static const unsigned int DEFAULT_WINDOWSIZE_X = 500;
 	static const unsigned int DEFAULT_WINDOWSIZE_Y = 500;
-	static const unsigned int VERSION = 6;
+	static const unsigned int VERSION = 7;
 	~Turtleizer(void);
 	// Initialises and starts a Turtleizer window
-	static void startUp(unsigned int sizeX = DEFAULT_WINDOWSIZE_X, unsigned int sizeY = DEFAULT_WINDOWSIZE_Y, HINSTANCE hInstance = NULL);
+	static Turtleizer* startUp(unsigned int sizeX = DEFAULT_WINDOWSIZE_X, unsigned int sizeY = DEFAULT_WINDOWSIZE_Y, HINSTANCE hInstance = NULL);
 	// Waits for someone closing the Turtleizer window and shuts Turtleizer down then
 	static void awaitClose();
 	// Deprecated API: Legacy synonym for awaitClose()
@@ -114,6 +128,7 @@ public:
 	static Turtleizer* getInstance();
 	// interactive thread - just waits for and reacts to user actions until closed
 	static DWORD WINAPI interact(LPVOID lpParam);
+
 	// Make the turtle move the given number of pixels forward (or backward if neg.) using pen colour.
 	void forward(double pixels);
 	// Make the turtle move the given number of pixels forward (or backward if neg.) using pen colour.
@@ -140,6 +155,13 @@ public:
 	void setBackground(unsigned char red, unsigned char green, unsigned char blue);
 	// Sets the default pen colour (used for moves without color argument) to the RGB values
 	void setPenColor(unsigned char red, unsigned char green, unsigned char blue);
+	// Returns the current horizontal pixel position in floating-point resolution
+	double getX() const;
+	// Returns the current vertical pixel position in floating-point resolution
+	double getY() const;
+	// Returns the current orientation in degrees from North (clockwise = positive)
+	double getOrientation() const;
+
 	// Immediately updates the Turtleizer window i.e. refreshes all damaged regions.
 	// After having been called with argument false, automatic updates after every
 	// turtle movement will no longer be done, otherwise the turtle returns to the
@@ -230,6 +252,13 @@ void showTurtle();
 void setBackground(unsigned char red, unsigned char green, unsigned char blue);
 // Sets the default pen colour (used for moves without color argument) to the RGB values
 void setPenColor(unsigned char red, unsigned char green, unsigned char blue);
+
+// Returns the current horizontal pixel position in floating-point resolution
+double getX();
+// Returns the current vertical pixel position in floating-point resolution
+double getY();
+// Returns the current orientation in degrees from North (clockwise = positive)
+double getOrientation();
 
 // Immediately updates the Turtleizer window i.e. refreshes all damaged regions.
 // After having been called with argument false, automatic updates after every

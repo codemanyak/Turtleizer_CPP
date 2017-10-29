@@ -4,25 +4,32 @@
  * Fachgebiet Angewandte Informatik
  * Modul Programmierung
  *
- * Objektklasse, die den Turtleizer des Structorizers
- * (http://structorizer.fisch.lu)
- * für eine einfache C-/C++-Umgebung nachbildet, dabei aber
- * die Möglichkeit bietet, zusätzliche Turtles zu erzeugen und zu bewegen
- * Thema: Brückenkurs Programmierung
- * Autor: Kay Gürtzig
- * Version: 6
+ * The automatic update of the drawing area is initially done after each drawing step,
+ * but then be done ever less frequently with the growing number of elements (traces)
+ * to be rendered.
+ * By invoking updateWindow(false) the regular update may be suppressed entirely. By
+ * using updateWindow(true) you may re-enable the regular update.
+ * BOTH call induce an immediate window update.
  *
- * Historie (oben ergänzen):
+ * History (add at top):
  * --------------------------------------------------------
- * 09.12.2016   VERSION 6: Dekomposition und API-Erweiterung für mehrere Turtles
- * 07.12.2016   VERSION 5: Methoden setPenColor, setBackground eingeführt (analog Structorizer 3.25-09)
- * 02.11.2016   VERSION 4: Methoden forward/backward getrennt von fd/bk, refresh() verbessert
- * 07.10.2016   VERSION 3: Neue Methode awaitClose() statt shutDown()
- * 30.04.2015	refresh()-Aufrufe eingeschränkt, um Performance zu verbessern
- * 29.09.2013	refresh() durch UpdateWindow()-Aufruf vervollständigt
- * 27.09.2013	makeFilePath() zum Laden des Turtle-Images
- * 25.09.2013	Flush in onPaint() ergänzt (für VS2012)
- * 20.09.2013	erstellt
+ * 2017-10-29   VERSION 7: API adaptation to Structorizer 3.27:
+ *              New methods/functions getX(), getY(), geOrientation()
+ *              adaptor functions now call startUp themselves if not done
+ *              Comments translated to English, exposed on GitHub
+ * 2016-12-09   VERSION 6: Decomposition and API extension for multiple Turtles
+ * 2016-12-07   VERSION 5: API adaptation to Structorizer 3.25-09: setPenColor, setBackground
+ * 2016-11-02   VERSION 4: API adaptation to Structorizer 3.25-03: separating forward/fd,
+ *              element-count-dependent update cycles introduced
+ * 2016-10-07   VERSION 3: New methode awaitClose() instad of shutDown()
+ * 2015-05-30	VERSION 2: ad0ditional arguments in method refresh(),
+ *				new method updateWindow(bool) and function updateTurtleWindow(bool),
+ *				new attribute autoUpdate,
+ * 2015-04-30   refresh() calls reduced to improve performance
+ * 2013-09-29	Accomplishemnt of refresh() by call of UpdateWindow()
+ * 2013-09-27	turtleImagePath, makeFilePath() added for loading Turtle images
+ * 2013-09-25.	flush inserted in onPaint() (for VS2012), turtleHeight, turtleWidth added
+ * 2013-09-20	created
  */
 
 #define _USE_MATH_DEFINES
@@ -120,7 +127,7 @@ Turtleizer* Turtleizer::getInstance()
 }
 
 // Initialisation method wrapping the private constructor
-void Turtleizer::startUp(unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance)
+Turtleizer* Turtleizer::startUp(unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance)
 {
 	const INT nCmdShow = SW_SHOWNORMAL;
 
@@ -131,7 +138,7 @@ void Turtleizer::startUp(unsigned int sizeX, unsigned int sizeY, HINSTANCE hInst
 	}
 	ShowWindow(pInstance->hWnd, nCmdShow);
 	UpdateWindow(pInstance->hWnd);
-
+	return pInstance;
 }
 
 void Turtleizer::awaitClose()
@@ -224,6 +231,23 @@ void Turtleizer::setPenColor(unsigned char red, unsigned char green, unsigned ch
 	(this->turtles.front())->setPenColor(red, green, blue);
 }
 
+// Returns the current horizontal pixel position in floating-point resolution
+double Turtleizer::getX() const
+{
+	return (this->turtles.front())->getX();
+}
+
+// Returns the current vertical pixel position in floating-point resolution
+double Turtleizer::getY() const
+{
+	return (this->turtles.front())->getY();
+}
+
+// Returns the current orientation in degrees from North (clockwise = positive)
+double Turtleizer::getOrientation() const
+{
+	return (this->turtles.front())->getOrientation();
+}
 
 // Refresh the window (i. e. invalidate the region between oldPos and this->pos) 
 void Turtleizer::refresh(const RECT& rect, int nElements) const
@@ -338,122 +362,166 @@ void Turtleizer::updateWindow(bool automatic)
 void forward(double pixels)
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->forward(pixels);
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->forward(pixels);
 }
 
 // Make the turtle move the given number of pixels forward.
 void fd(int pixels)
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->fd(pixels);
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->fd(pixels);
 }
 
 // Make the turtle move the given number of pixels forward in real coordinates.
 void forward(double pixels, Turtleizer::TurtleColour col)
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->forward(pixels, col);
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->forward(pixels, col);
 }
 
 // Make the turtle move the given number of pixels forward.
 void fd(int pixels, Turtleizer::TurtleColour col)
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->fd(pixels, col);
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->fd(pixels, col);
 }
 
 // Rotates the turtle to the left by some angle (degrees!).
 void left(double degrees)
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->left(degrees);
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->left(degrees);
 }
 
 // Sets the turtle to the position (X,Y).
 void gotoXY(int x, int y)
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->gotoXY(x, y);
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->gotoXY(x, y);
 }
 
 // Sets the X-coordinate of the turtle's position to a new value.
 void gotoX(int x)
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->gotoX(x);
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->gotoX(x);
 }
 // Sets the Y-coordinate of the turtle's position to a new value.
 void gotoY(int y)
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->gotoY(y);
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->gotoY(y);
 }
 
 // The turtle lifts the pen up, so when moving no line will be drawn
 void penUp()
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->penUp();
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->penUp();
 }
 // The turtle sets the pen down, so a line is being drawn when moving
 void penDown()
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->penDown();
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->penDown();
 }
 
 // Hides the turtle
 void hideTurtle()
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->showTurtle(false);
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->showTurtle(false);
 }
 // Show the turtle again
 void showTurtle()
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->showTurtle(true);
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->showTurtle(true);
 }
 
 // Sets the Turtleizer background to the colour defined by the RGB values
 void setBackground(unsigned char red, unsigned char green, unsigned char blue)
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
-	if (pTurtle != NULL) {
-		pTurtle->setBackground(red, green, blue);
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
 	}
+	pTurtle->setBackground(red, green, blue);
 }
 // Sets the default pen colour (used for moves without color argument) to the RGB values
 void setPenColor(unsigned char red, unsigned char green, unsigned char blue)
 {
 	Turtleizer* pTurtle = Turtleizer::getInstance();
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
+	}
 	if (pTurtle != NULL) {
 		pTurtle->setPenColor(red, green, blue);
 	}
+}
+
+// Returns the X-coordinate of the default turtle's position.
+double getX()
+{
+	Turtleizer* pTurtle = Turtleizer::getInstance();
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
+	}
+	return pTurtle->getX();
+}
+// Returns the Y-coordinate of the default turtle's position.
+double getY()
+{
+	Turtleizer* pTurtle = Turtleizer::getInstance();
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
+	}
+	return pTurtle->getY();
+}
+// Returns the current orientation of the default turtle.
+double getOrientation()
+{
+	Turtleizer* pTurtle = Turtleizer::getInstance();
+	if (pTurtle == NULL) {
+		pTurtle = Turtleizer::startUp();
+	}
+	return pTurtle->getOrientation();
 }
 
 
@@ -474,11 +542,10 @@ void updateTurtleWindow(bool automatic)
 // at the given position to the Turtleizer
 Turtle* addNewTurtle(int x, int y, LPCWSTR imagePath)
 {
-	Turtle* pTurtle = nullptr;
 	Turtleizer* pTurtleizer = Turtleizer::getInstance();
-	if (pTurtleizer != NULL) {
-		pTurtle = pTurtleizer->addNewTurtle(x, y, imagePath);
+	if (pTurtleizer == NULL) {
+		pTurtleizer = Turtleizer::startUp();
 	}
-	return pTurtle;
+	return pTurtleizer->addNewTurtle(x, y, imagePath);;
 }
 
