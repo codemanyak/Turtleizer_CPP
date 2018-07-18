@@ -117,7 +117,7 @@ public:
 						 WPARAM wParam, LPARAM lParam);
 	static const unsigned int DEFAULT_WINDOWSIZE_X = 500;
 	static const unsigned int DEFAULT_WINDOWSIZE_Y = 500;
-	static const unsigned int VERSION = 7;
+	static const unsigned int VERSION = 8;
 	~Turtleizer(void);
 	// Initialises and starts a Turtleizer window
 	static Turtleizer* startUp(unsigned int sizeX = DEFAULT_WINDOWSIZE_X, unsigned int sizeY = DEFAULT_WINDOWSIZE_Y, HINSTANCE hInstance = NULL);
