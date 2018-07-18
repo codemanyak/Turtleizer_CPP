@@ -10,8 +10,8 @@
  * Object class approximately emulating the Turtleizer component of Structorizer
  * (http://structorizer.fisch.lu) for a simple C++  environment
  * Theme: Prep course Programming
- * Autor: Kay Gürtzig
- * Version: 7
+ * Autor: Kay GÃ¼rtzig
+ * Version: 8
  *
  * Usage:
  * 1. Configure a link to the compiled library (Turtleizer.lib) in your (Console) application
@@ -45,7 +45,7 @@
  *     //		Turtleizer::TC_RED,
  *     //		Turtleizer::TC_YELLOW,
  *     //		Turtleizer::TC_GREEN,
- *     //		Turtleizer::TC_LIGHTBLUE,
+ *     //		Turtleizer::TC_CYAN,
  *     //		Turtleizer::TC_BLUE,
  *     //		Turtleizer::TC_MAGENTA,
  *     //		Turtleizer::TC_GREY,
@@ -70,6 +70,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2018-07-18   VERSION 8: Colour constant TC_LIGHTBLUE renamed to TC_CYAN but kept as alias for TC_CYAN
  * 2017-10-29   VERSION 7: API adaptation to Structorizer 3.27:
  *              New methods/functions getX(), getY(), geOrientation()
  *              adaptor functions now call startUp themselves if not done
@@ -109,8 +110,8 @@ class Turtleizer
 {
 public:
 	enum TurtleColour {
-		TC_BLACK, TC_RED, TC_YELLOW, TC_GREEN,
-		TC_LIGHTBLUE, TC_BLUE, TC_MAGENTA, TC_GREY, TC_ORANGE, TC_VIOLET
+		TC_BLACK, TC_RED, TC_YELLOW, TC_GREEN, TC_CYAN,
+		TC_LIGHTBLUE = TC_CYAN, TC_BLUE, TC_MAGENTA, TC_GREY, TC_ORANGE, TC_VIOLET
 	};
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 						 WPARAM wParam, LPARAM lParam);
