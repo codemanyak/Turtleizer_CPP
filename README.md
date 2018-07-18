@@ -13,11 +13,28 @@ It may be diffcult to work with the original project file. In this case simply s
 It is important that the character encoding be set to "UTF-8". Otherwise some trouble with string type conversion will arise.
 
 The only additional instruction that should be inserted in your C++ main function (e.g. exported from Structrizer) is
-```
+```c++
   Turtleizer::awaitClose(); // Put this at the end of the main function
 ```
 
-The only purpose of Turtleizer::awaitClose() is to let the main thread wait for someone closing the Turtleizer window, which opens with the first called Turtleizer instruction.
+The only purpose of `Turtleizer::awaitClose()` is to let the main thread wait for someone closing the Turtleizer window, which automatically opens with the first called Turtleizer instruction.
+
+In addition to the standard Turtleizer functionality of Structorizer (http://structorizer.fisch.lu) this library offers to add further "turtles" to the canvas.
+
+To do this, you need the Turtleizer singleton instance first. Use method `Turtleizer::getInstance()` to obtain a pointer to it. With this instance you may create further turtles by means of method
+`Turtle* addNewTurtle(int x, int y, LPCWSTR imagePath = NULL);`
+You simply specify the start position via arguments `x` and `y` and provide the file path to an image file (recommended: PNG format). The resulting pointer references the new "turtle" instance. (You may sensibly derive a shared_ptr or unique_ptr from it since the `Turtle` instance is dynamically created.)
+
+You may create as many `Turtle` instances as you like (performance may become a limiting factor, of course).
+Now you can apply Turtleizer commands as method calls to these specific "turtle" instances  independently. Example:
+
+```c++
+Turtle* pMyCar = Turtleizer::getInstance()->addNewTurtle(200, 150, L"C:\\Users\\Public\\Pictures\\redCar.png");
+unique_ptr<Turtle> upMyCar(pMyCar);
+upMyCar->right(45);  // Turns the red car by 45 °
+upMyCar->forward(100); // Moves the red car
+forward(75);  // This moves the standard turtle independently
+```
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or any later version.
 
