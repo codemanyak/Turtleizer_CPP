@@ -10,7 +10,7 @@
  * Object class approximately emulating the Turtleizer component of Structorizer
  * (http://structorizer.fisch.lu) for a simple C++  environment
  * Theme: Prep course Programming
- * Autor: Kay Gürtzig
+ * Autor: Kay GÃ¼rtzig
  * Version: 9
  *
  * Usage:
