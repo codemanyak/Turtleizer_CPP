@@ -11,10 +11,11 @@
  *
  * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
- * Version: 7 (covering capabilities of Structorizer 3.27)
+ * Version: 9 (covering capabilities of Structorizer 3.28-07)
  *
  * History (app at top):
  * --------------------------------------------------------
+ * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29   New methods getX(), getY(), getOrientation() implemented
  * 2016-12-09   Created für VERSION 6
  */
@@ -170,6 +171,13 @@ void Turtle::showTurtle(bool show)
 void Turtle::setPenColor(unsigned char red, unsigned char green, unsigned char blue)
 {
 	this->defaultColour = Color(red, green, blue);
+}
+
+// Wipes all drawn content of this turtle
+void Turtle::clear()
+{
+	this->elements.clear();
+	this->refresh(this->pos);
 }
 
 // Returns the current horizontal pixel position in floating-point resolution

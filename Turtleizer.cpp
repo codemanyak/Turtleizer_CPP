@@ -13,8 +13,9 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29   VERSION 7: API adaptation to Structorizer 3.27:
- *              New methods/functions getX(), getY(), geOrientation()
+ *              New methods/functions getX(), getY(), getOrientation()
  *              adaptor functions now call startUp themselves if not done
  *              Comments translated to English, exposed on GitHub
  * 2016-12-09   VERSION 6: Decomposition and API extension for multiple Turtles
@@ -52,7 +53,7 @@ const Color Turtleizer::colourTable[TC_VIOLET + 1] =
 	Color(255, 0, 0),	// TC_RED
 	Color(255, 255, 0),	// TC_YELLOW
 	Color(0, 255, 0),	// TC_GREEN
-	Color(0, 255, 255),	// TC_LIGHTBLUE
+	Color(0, 255, 255),	// TC_LIGHTBLUE = TC_CYAN
 	Color(0, 0, 255),	// TC_BLUE
 	Color(255, 0, 255),	// TC_MAGENTA
 	Color(127, 127, 127),	// TC_GREY
@@ -229,6 +230,19 @@ void Turtleizer::setBackground(unsigned char red, unsigned char green, unsigned 
 void Turtleizer::setPenColor(unsigned char red, unsigned char green, unsigned char blue)
 {
 	(this->turtles.front())->setPenColor(red, green, blue);
+}
+
+// Wipes all drawn content from the Turtleizer canvas (without moving the turtle)
+void Turtleizer::clear(bool allTurtles)
+{
+	if (!allTurtles) {
+		this->turtles.front()->clear();
+	}
+	else {
+		for (Turtle* pTurtle : this->turtles) {
+			pTurtle->clear();
+		}
+	}
 }
 
 // Returns the current horizontal pixel position in floating-point resolution
@@ -493,6 +507,15 @@ void setPenColor(unsigned char red, unsigned char green, unsigned char blue)
 	}
 	if (pTurtle != NULL) {
 		pTurtle->setPenColor(red, green, blue);
+	}
+}
+
+// Wipes all drawn content from the Turtleizer canvas (without moving the turtle)
+void clear(bool allTurtles)
+{
+	Turtleizer* pTurtle = Turtleizer::getInstance();
+	if (pTurtle != NULL) {
+		pTurtle->clear(allTurtles);
 	}
 }
 

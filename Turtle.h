@@ -14,10 +14,11 @@
  *
  * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
- * Version: 7 (covering capabilities of Structorizer 3.27)
+ * Version: 9 (covering capabilities of Structorizer 3.28-07)
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29	new functions getX(), getY(), and getOrientation()
  * 2016-12-09	created
  */
@@ -82,8 +83,12 @@ public:
 	void showTurtle(bool show);
 	// Sets the default pen colour (used for moves without color argument) to the RGB values
 	void setPenColor(unsigned char red, unsigned char green, unsigned char blue);
+	// Wipes all drawn content of this turtle
+	void clear();
+
 	// Draws this turtle and its trayectory in 2D graphics gr
 	void draw(Graphics& gr) const;
+
 	// Returns the current horizontal pixel position in floating-point resolution
 	double getX() const;
 	// Returns the current vertical pixel position in floating-point resolution

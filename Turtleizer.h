@@ -11,7 +11,7 @@
  * (http://structorizer.fisch.lu) for a simple C++  environment
  * Theme: Prep course Programming
  * Autor: Kay Gürtzig
- * Version: 7
+ * Version: 9
  *
  * Usage:
  * 1. Configure a link to the compiled library (Turtleizer.lib) in your (Console) application
@@ -36,6 +36,7 @@
  *     //		hideTurtle(), showTurtle()
  *     //       setPenColor(r, g, b)
  *     //       setBackground(r, g, b)
+ *     //       clear()
  *     //       getX(), getY()
  *     //       getOrientation()
  *     // The functions forward/fd und backward/bk may be equipped with a second
@@ -45,7 +46,7 @@
  *     //		Turtleizer::TC_RED,
  *     //		Turtleizer::TC_YELLOW,
  *     //		Turtleizer::TC_GREEN,
- *     //		Turtleizer::TC_LIGHTBLUE,
+ *     //		Turtleizer::TC_CYAN,
  *     //		Turtleizer::TC_BLUE,
  *     //		Turtleizer::TC_MAGENTA,
  *     //		Turtleizer::TC_GREY,
@@ -70,6 +71,8 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2018-07-30   VERSION 9: New function clear() added (according to Structorizer 3.28-07)
+ * 2018-07-18   VERSION 8: Colour constant TC_LIGHTBLUE renamed to TC_CYAN but kept as alias for TC_CYAN
  * 2017-10-29   VERSION 7: API adaptation to Structorizer 3.27:
  *              New methods/functions getX(), getY(), geOrientation()
  *              adaptor functions now call startUp themselves if not done
@@ -109,14 +112,14 @@ class Turtleizer
 {
 public:
 	enum TurtleColour {
-		TC_BLACK, TC_RED, TC_YELLOW, TC_GREEN,
-		TC_LIGHTBLUE, TC_BLUE, TC_MAGENTA, TC_GREY, TC_ORANGE, TC_VIOLET
+		TC_BLACK, TC_RED, TC_YELLOW, TC_GREEN, TC_CYAN,
+		TC_LIGHTBLUE = TC_CYAN, TC_BLUE, TC_MAGENTA, TC_GREY, TC_ORANGE, TC_VIOLET
 	};
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 						 WPARAM wParam, LPARAM lParam);
 	static const unsigned int DEFAULT_WINDOWSIZE_X = 500;
 	static const unsigned int DEFAULT_WINDOWSIZE_Y = 500;
-	static const unsigned int VERSION = 7;
+	static const unsigned int VERSION = 9;
 	~Turtleizer(void);
 	// Initialises and starts a Turtleizer window
 	static Turtleizer* startUp(unsigned int sizeX = DEFAULT_WINDOWSIZE_X, unsigned int sizeY = DEFAULT_WINDOWSIZE_Y, HINSTANCE hInstance = NULL);
@@ -155,6 +158,10 @@ public:
 	void setBackground(unsigned char red, unsigned char green, unsigned char blue);
 	// Sets the default pen colour (used for moves without color argument) to the RGB values
 	void setPenColor(unsigned char red, unsigned char green, unsigned char blue);
+	// Wipes all drawn content from the Turtleizer canvas (without moving the turtle)
+	// Without argument, it will just forget the main turtle traces, wih argument true
+	// the traces of all additional turtles are also erased.
+	void clear(bool allTurtles = false);
 	// Returns the current horizontal pixel position in floating-point resolution
 	double getX() const;
 	// Returns the current vertical pixel position in floating-point resolution
@@ -252,6 +259,11 @@ void showTurtle();
 void setBackground(unsigned char red, unsigned char green, unsigned char blue);
 // Sets the default pen colour (used for moves without color argument) to the RGB values
 void setPenColor(unsigned char red, unsigned char green, unsigned char blue);
+
+// Wipes all drawn content from the Turtleizer canvas (without moving the turtle)
+// Without argument, it will just forget the main turtle traces, wih argument true
+// the traces of all additional turtles are also erased.
+void clear(bool allTurtles = false);
 
 // Returns the current horizontal pixel position in floating-point resolution
 double getX();
