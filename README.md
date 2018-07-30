@@ -39,7 +39,7 @@ As mentioned above, Turtleizer_CPP implements all Turtleizer procedures and func
 | `void showTurtle()` |	Show the turtle image again. |
 | `void setPenColor(int red, int green, int blue)` | Set the default pen colour to the given RGB value (range 0...255 per argument). |
 | `void setBackgroud(int red, int green, int blue)` | Set the background colour to the given RGB value (range 0...255 per argument). |
-| `void clear() | Wipes the canvas from all traces of the turtle. |
+| `void clear()` | Wipes the canvas from all traces of the turtle. |
 | `double getX()` | Returns the current horizontal position (may be between pixels). |
 | `double getY()` | Returns the current vertical position (may be beztween pixels). |
 | `double getOrientation()` | Returns the current turtle orientiation in degrees (in degrees, range -180...180). |
@@ -80,7 +80,7 @@ forward(75);  // This moves the standard turtle independently
 ```
 
 With this respect, there is an enhanced standard procedure:
-`void clear(bool allTurtles = false);
+`void clear(bool allTurtles = false);`
 This wipes the canvas from the traces of all turtles, including the additional ones, if the argument is true.
 
 ## License remarks
