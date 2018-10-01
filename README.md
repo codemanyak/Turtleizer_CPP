@@ -1,7 +1,7 @@
 # Turtleizer_CPP
-A Turtle graphic library in C++, functionally compatible with the Turtleizer module of Structorizer
+A Turtle graphic library in C++, functionally compatible with the Turtleizer module of [Structorizer](https://github.com/fesch/Structorizer.Desktop).
 
-This little project is just a makeshift static library based on gdiplus and was initiated to get turtle algorithms created in [Structorizer](http://structorizer.fisch.lu) and exported to C++ working with an equivalent behaviour. The source relies on WinAPI functions and Windows classes.
+This little project is just a makeshift static library based on gdiplus and was initiated to get turtle algorithms created in [Structorizer](https://structorizer.fisch.lu) and exported to C++ working with an equivalent behaviour. The source relies on WinAPI functions and Windows classes.
 
 ## How to make use of Turtleizer_CPP in an application project
 There are several ways to come to terms with linking your application code against this library:
@@ -62,7 +62,7 @@ The only additional instruction that should be inserted in your C++ main functio
 The only purpose of `Turtleizer::awaitClose()` is to let the main thread wait for someone closing the Turtleizer window, which automatically opens with the first called Turtleizer instruction.
 
 ## Additional "turtles"
-In addition to the standard Turtleizer functionality of [Structorizer](http://structorizer.fisch.lu) this library offers to add further "turtles" to the canvas.
+In addition to the standard Turtleizer functionality of [Structorizer](https://structorizer.fisch.lu) this library offers to add further "turtles" to the canvas.
 
 To do this, you need the Turtleizer singleton instance first. Use method `Turtleizer::getInstance()` to obtain a pointer to it. With this instance you may create further turtles by means of method
 `Turtle* addNewTurtle(int x, int y, LPCWSTR imagePath = NULL);`
