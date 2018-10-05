@@ -9,9 +9,9 @@ There are several ways to come to terms with linking your application code again
 2. Put this project into your VisualStudio solution folder next to the projects with exported turtleizer programs and make sure to update the project to your VisualStudio version. Then establisg a reference (link) to the Turtleizer project in all projects needing it, configure "..\Turtleizer" as additional include directory in these projects.
 3. Compile this project separately as static library, and then (similar to the approach before) configure the Turtleizer.lib as additional linker input as well as the folder where Turleizer.h and Turtle.h reside as additional include folder for your project.
 
-It may be diffcult to work with the original project file (in cases 2 and 3), in particular if you happen to use an older VisualStudio version. In this case simply set up a new static library project, insert the header and source files and get it compiled.
+It may be diffcult to work with the original project file (in cases 2 and 3), in particular if you happen to use an older VisualStudio version. In this case simply set up a new static library project, insert the header and source files and get it compiled. With up-to-date VisualStudio versions, in contrast, you will usually have to update the project.
 
-**It is important that the character encoding be set to "UTF-8". Otherwise some trouble with string type conversion will arise.**
+**It is important that the character encoding be set to "UTF-8" (Unicode). Otherwise some trouble with string type conversion will arise. It may also be necessary to adapt the platform of the using project to Win32 (x86) if Turtleizer_CPP can't be    switched to x64.**
 
 ## Turtleizer_CPP API
 As mentioned above, Turtleizer_CPP implements all Turtleizer procedures and functions of Structorizer as global functions:
