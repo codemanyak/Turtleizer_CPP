@@ -5,11 +5,12 @@ This little project is just a makeshift static library based on gdiplus and was 
 
 ## How to make use of Turtleizer_CPP in an application project
 There are several ways to come to terms with linking your application code against this library:
-1. Just copy the source and header files into the project were the Structorizer export was directed to (i.e. rather than linking Turtleizer_CPP as library you may of course integrate the few sources into your application project).
-2. Put this project into your VisualStudio solution folder next to the projects with exported turtleizer programs and make sure to update the project to your VisualStudio version. Then establisg a reference (link) to the Turtleizer project in all projects needing it, configure "..\Turtleizer" as additional include directory in these projects.
-3. Compile this project separately as static library, and then (similar to the approach before) configure the Turtleizer.lib as additional linker input as well as the folder where Turleizer.h and Turtle.h reside as additional include folder for your project.
+1. Just copy the source and header files into the project where the Structorizer export was directed to (i.e. rather than linking Turtleizer_CPP as library you may of course integrate the few sources into your application project).
+2. Put this project into your VisualStudio solution folder next to the projects with exported turtleizer programs and make sure to update the project to your VisualStudio version. Then establish a reference (link) to the Turtleizer project in all projects needing it, configure "..\Turtleizer" as additional include directory in these projects.
+3. Compile this project separately as static library, and then (similar to the approach before) configure the Turtleizer.lib as additional linker input as well as the folder where Turtleizer.h and Turtle.h reside as additional include folder for your project.
 
-It may be diffcult to work with the original project file (in cases 2 and 3), in particular if you happen to use an older VisualStudio version. In this case simply set up a new static library project, insert the header and source files and get it compiled. With up-to-date VisualStudio versions, in contrast, you will usually have to update the project.
+It may be difficult to work with the original project file (in cases 2 and 3), in particular if you happen to use an older VisualStudio version. In this case simply set up a new static library project, insert the header and source files and get it compiled. With up-to-date VisualStudio versions, in contrast, you may have to update the project.
+When you just import the sources (case 1 above or if you set up a new static library project around the Turtleizer_CPP sources) you must make sure to add gdiplus.lib to the dependencies of the linker and check that the folder where gdiplus.lib resides is registered among the searched library directories)
 
 **It is important that the character encoding be set to "UTF-8" (Unicode). Otherwise some trouble with string type conversion will arise. It may also be necessary to adapt the platform of the using project to Win32 (x86) if Turtleizer_CPP can't be    switched to x64.**
 
