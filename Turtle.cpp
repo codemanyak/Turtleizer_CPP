@@ -1,7 +1,7 @@
 /*
  * Fachhochschule Erfurt www.fh-erfurt.de/ai
- * Fachgebiet Angewandte Informatik
- * Modul Programmierung
+ * Fachrichtung Angewandte Informatik
+ * Module: Programming
  *
  * Object class, representing one (of potentially many) Turtles withing the
  * simple C++ emulation of the Turtleizer module coming with Structorizer
@@ -13,11 +13,11 @@
  * Author: Kay Gürtzig
  * Version: 9 (covering capabilities of Structorizer 3.28-07)
  *
- * History (app at top):
+ * History (add at top):
  * --------------------------------------------------------
  * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29   New methods getX(), getY(), getOrientation() implemented
- * 2016-12-09   Created für VERSION 6
+ * 2016-12-09   Created for VERSION 6
  */
 
 #define _USE_MATH_DEFINES

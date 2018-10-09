@@ -1,8 +1,10 @@
 #include "Turtleizer.h"
 /*
  * Fachhochschule Erfurt www.fh-erfurt.de/ai
- * Fachgebiet Angewandte Informatik
- * Modul Programmierung
+ * Fachrichtung Angewandte Informatik
+ * Module: Programming
+ * Theme: Prep course Programming
+ * Author: Kay Gürtzig
  *
  * The automatic update of the drawing area is initially done after each drawing step,
  * but then be done ever less frequently with the growing number of elements (traces)
@@ -16,18 +18,18 @@
  * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29   VERSION 7: API adaptation to Structorizer 3.27:
  *              New methods/functions getX(), getY(), getOrientation()
- *              adaptor functions now call startUp themselves if not done
+ *              adapter functions now call startUp themselves if not done
  *              Comments translated to English, exposed on GitHub
  * 2016-12-09   VERSION 6: Decomposition and API extension for multiple Turtles
  * 2016-12-07   VERSION 5: API adaptation to Structorizer 3.25-09: setPenColor, setBackground
  * 2016-11-02   VERSION 4: API adaptation to Structorizer 3.25-03: separating forward/fd,
  *              element-count-dependent update cycles introduced
- * 2016-10-07   VERSION 3: New methode awaitClose() instad of shutDown()
+ * 2016-10-07   VERSION 3: New method awaitClose() instead of shutDown()
  * 2015-05-30	VERSION 2: ad0ditional arguments in method refresh(),
  *				new method updateWindow(bool) and function updateTurtleWindow(bool),
  *				new attribute autoUpdate,
  * 2015-04-30   refresh() calls reduced to improve performance
- * 2013-09-29	Accomplishemnt of refresh() by call of UpdateWindow()
+ * 2013-09-29	Accomplishment of refresh() by call of UpdateWindow()
  * 2013-09-27	turtleImagePath, makeFilePath() added for loading Turtle images
  * 2013-09-25.	flush inserted in onPaint() (for VS2012), turtleHeight, turtleWidth added
  * 2013-09-20	created
@@ -35,7 +37,7 @@
 
 #define _USE_MATH_DEFINES
 #include <cmath>
-// Pre-caution for VS2012
+// Precaution for VS2012
 #ifndef _MATH_DEFINES_DEFINED
 #define M_PI 3.14159265358979323846
 #endif /*_MATH_DEFINES_DEFINED*/

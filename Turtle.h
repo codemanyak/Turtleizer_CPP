@@ -3,8 +3,8 @@
 #define TURTLE_H
 /*
  * Fachhochschule Erfurt www.fh-erfurt.de/ai
- * Fachgebiet Angewandte Informatik
- * Modul Programmierung
+ * Fachrichtung Angewandte Informatik
+ * Module: Programming
  *
  * Object class, representing one (of potentially many) Turtles withing the
  * simple C++ emulation of the Turtleizer module coming with Structorizer
@@ -97,7 +97,7 @@ public:
 	double getOrientation() const;
 
 protected:
-	// Typename for the list of tracked line elements
+	// Type name for the list of tracked line elements
 	typedef list<TurtleLine> Elements;
 private:
 	static const LPCWSTR TURTLE_IMAGE_FILE;		// File name of the turtle image
@@ -109,7 +109,7 @@ private:
 	bool penIsDown;							// Whether the pen is ready to draw
 	bool isVisible;							// Whether the turtle itself ought to be visible
 	Elements elements;						// List of lines drawn in this session
-	Color defaultColour;					// Default colour for line segements withot explicit colour
+	Color defaultColour;					// Default colour for line segments without explicit colour
 
 	// Composes a file path from the path of this source file (project
 	// folder) if and the given file name `filename´.

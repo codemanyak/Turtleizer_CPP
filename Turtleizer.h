@@ -4,13 +4,13 @@
 #define TURTLEIZER_H
 /*
  * Fachhochschule Erfurt www.fh-erfurt.de/ai
- * Fachgebiet Angewandte Informatik
- * Modul Programmierung
+ * Fachrichtung Angewandte Informatik
+ * Module: Programming
  *
  * Object class approximately emulating the Turtleizer component of Structorizer
  * (http://structorizer.fisch.lu) for a simple C++  environment
  * Theme: Prep course Programming
- * Autor: Kay Gürtzig
+ * Author: Kay Gürtzig
  * Version: 9
  *
  * Usage:
@@ -34,11 +34,11 @@
  *     //		gotoXY(x, y), gotoX(x), gotoY(y)
  *     //		penUp(), penDown()
  *     //		hideTurtle(), showTurtle()
- *     //       setPenColor(r, g, b)
- *     //       setBackground(r, g, b)
- *     //       clear()
- *     //       getX(), getY()
- *     //       getOrientation()
+ *     //		setPenColor(r, g, b)
+ *     //		setBackground(r, g, b)
+ *     //		clear()
+ *     //		getX(), getY()
+ *     //		getOrientation()
  *     // The functions forward/fd und backward/bk may be equipped with a second
  *     // Argument of type Turtleizer::TurtleColour, i.e. with one of the constants
  *     // (where Turtleizer::TC_BLACK is the default):
@@ -71,22 +71,23 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2018-10-09   New turtle symbol according to Structorizer versions >= 3.28
  * 2018-07-30   VERSION 9: New function clear() added (according to Structorizer 3.28-07)
  * 2018-07-18   VERSION 8: Colour constant TC_LIGHTBLUE renamed to TC_CYAN but kept as alias for TC_CYAN
  * 2017-10-29   VERSION 7: API adaptation to Structorizer 3.27:
  *              New methods/functions getX(), getY(), geOrientation()
- *              adaptor functions now call startUp themselves if not done
+ *              adapter functions now call startUp themselves if not done
  *              Comments translated to English, exposed on GitHub
  * 2016-12-09   VERSION 6: Decomposition and API extension for multiple Turtles
  * 2016-12-07   VERSION 5: API adaptation to Structorizer 3.25-09: setPenColor, setBackground
  * 2016-11-02   VERSION 4: API adaptation to Structorizer 3.25-03: separating forward/fd,
  *              element-count-dependent update cycles introduced
- * 2016-10-07   VERSION 3: New methode awaitClose() instad of shutDown()
+ * 2016-10-07   VERSION 3: New method awaitClose() instead of shutDown()
  * 2015-05-30	VERSION 2: additional arguments in method refresh(),
  *				new method updateWindow(bool) and function updateTurtleWindow(bool),
  *				new attribute autoUpdate,
  *				new class constant VERSION
- * 2013-09-29	Accomplishemnt of comments
+ * 2013-09-29	Accomplishment of comments
  * 2013-09-27	turtleImagePath, makeFilePath() added
  * 2013-09-25.	turtleHeight, turtleWidth added
  * 2013-09-20	initial version
