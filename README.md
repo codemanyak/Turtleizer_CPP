@@ -28,9 +28,9 @@ As mentioned above, Turtleizer_CPP implements all Turtleizer procedures and func
 | `void backward(double pixel, Turtleizer::TurtleColour col)` | Draws the line segment with the given colour. |
 | `void bk(int pixel, Turteizer::TurtleColour col)` | As before but with an integer coordinate model (see notes below). |
 | `void right(double degrees)` | Rotates the turtle to the right by the angle given in degrees. |
-| `void rr(double angle)` | As before. |
-| `void left(double angle)` | Rotates the turtle to the left by the angle given in degrees. |
-| `void rl(double angle)` | As before. |
+| `void rr(double degrees)` | As before. |
+| `void left(double degrees)` | Rotates the turtle to the left by the angle given in degrees. |
+| `void rl(double degrees)` | As before. |
 | `void gotoXY(int X, int Y)` | Sets the turtle to the position (X,Y) - without drawing! |
 | `void gotoX(int X)` | Sets the X coordintae of the turtle's position to the new value - without drawing! |
 | `void gotoX(int Y)` | Sets the Y coordintae of the turtle's position to the new value - without drawing! |
@@ -43,7 +43,7 @@ As mentioned above, Turtleizer_CPP implements all Turtleizer procedures and func
 | `void clear()` | Wipes the canvas from all traces of the turtle. |
 | `double getX()` | Returns the current horizontal position (may be between pixels). |
 | `double getY()` | Returns the current vertical position (may be beztween pixels). |
-| `double getOrientation()` | Returns the current turtle orientiation in degrees (in degrees, range -180...180). |
+| `double getOrientation()` | Returns the current turtle orientiation in degrees (range -180..+180). |
 
 The codes for the standard set of ten predefined colours for the `forward()`, `backward()` etc. moves are defined as follows:
 ```c++
