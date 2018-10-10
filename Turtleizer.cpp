@@ -370,9 +370,9 @@ void Turtleizer::updateWindow(bool automatic)
 }
 
 
-/////////////////// GLOBAL FUNCTIONS FOR SIMPLICITY ////////////////////
-// None of them will work if the Turleizer hadn't been set up before  //
-////////////////////////////////////////////////////////////////////////
+/////////////////////// GLOBAL FUNCTIONS FOR SIMPLICITY ///////////////////////
+// Calling any of these functions starts up the Turtleizer if it hadn't been //
+///////////////////////////////////////////////////////////////////////////////
 
 // Make the turtle move the given number of pixels forward in real coordinates.
 void forward(double pixels)
