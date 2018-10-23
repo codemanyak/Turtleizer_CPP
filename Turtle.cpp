@@ -1,5 +1,5 @@
 /*
- * Fachhochschule Erfurt www.fh-erfurt.de/ai
+ * Fachhochschule Erfurt https://ai.fh-erfurt.de
  * Fachrichtung Angewandte Informatik
  * Module: Programming
  *
@@ -11,7 +11,7 @@
  *
  * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
- * Version: 9 (covering capabilities of Structorizer 3.28-07)
+ * Version: 10.0.0 (covering capabilities of Structorizer 3.28-07, new versioning mechanism)
  *
  * History (add at top):
  * --------------------------------------------------------
@@ -37,7 +37,7 @@ Turtle::Turtle(int x, int y, LPCWSTR imagePath)
 : turtleImagePath(NULL)
 , turtleWidth(35)	// Just some default
 , turtleHeight(35)	// Just some default
-, pos(x, y)
+, pos((REAL)x, (REAL)y)
 , penIsDown(true)
 , isVisible(true)
 , orient(0.0)
@@ -136,13 +136,13 @@ void Turtle::gotoXY(int x, int y)
 // Sets the X-coordinate of the turtle's position to a new value.
 void Turtle::gotoX(int x)
 {
-	this->gotoXY(x, this->pos.Y);
+	this->gotoXY(x, (int)this->pos.Y);
 }
 
 // Sets the Y-coordinate of the turtle's position to a new value.
 void Turtle::gotoY(int y)
 {
-	this->gotoXY(this->pos.X, y);
+	this->gotoXY((int)this->pos.X, y);
 }
 
 // The turtle lifts the pen up, so when moving no line will be drawn
@@ -208,7 +208,7 @@ double Turtle::getOrientation() const
 void Turtle::refresh(const PointF& oldPos, bool forceIconSize) const
 {
 	// Consider rotation, so use maximum diagonal
-	LONG halfIconSize = (forceIconSize || this->isVisible) ? (max(this->turtleHeight, this->turtleWidth) / sqrt(2.0) +1) : 1;
+	LONG halfIconSize = (forceIconSize || this->isVisible) ? (LONG)(max(this->turtleHeight, this->turtleWidth) / sqrt(2.0) +1) : 1L;
 	RECT rect;
 	rect.left = (LONG)floor(min(oldPos.X, this->pos.X)) - halfIconSize;
 	rect.right = (LONG)ceil(max(oldPos.X, this->pos.X)) + halfIconSize;
@@ -263,13 +263,13 @@ void Turtle::draw(Graphics& gr) const
 		// Display an image
 		//Image* image = new Image(L"Turtle.png");
 		Image* image = new Image(this->turtleImagePath);
-		PointF pointF(-(REAL)this->turtleWidth / 2.0, -(REAL)this->turtleHeight / 2.0);
+		PointF pointF(-(REAL)this->turtleWidth / (REAL)2.0, -(REAL)this->turtleHeight / (REAL)2.0);
 #if DEBUG_PRINT
 		printf("The width of the image is %u.\n", this->turtleWidth);
 		printf("The height of the image is %u.\n", this->turtleHeight);
 #endif /*DEBUG_PRINT*/
 		gr.TranslateTransform(this->pos.X, this->pos.Y);
-		gr.RotateTransform(-this->orient);
+		gr.RotateTransform(-(REAL)this->orient);
 
 		Matrix transf;
 		gr.GetTransform(&transf);

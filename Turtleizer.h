@@ -3,7 +3,7 @@
 #ifndef TURTLEIZER_H
 #define TURTLEIZER_H
 /*
- * Fachhochschule Erfurt www.fh-erfurt.de/ai
+ * Fachhochschule Erfurt https://ai.fh-erfurt.de
  * Fachrichtung Angewandte Informatik
  * Module: Programming
  *
@@ -11,7 +11,7 @@
  * (http://structorizer.fisch.lu) for a simple C++  environment
  * Theme: Prep course Programming
  * Author: Kay Gürtzig
- * Version: 9
+ * Version: 10.0.0
  *
  * Usage:
  * 1. Configure a link to the compiled library (Turtleizer.lib) in your (Console) application
@@ -71,6 +71,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
  * 2018-10-09   New turtle symbol according to Structorizer versions >= 3.28
  * 2018-07-30   VERSION 9: New function clear() added (according to Structorizer 3.28-07)
  * 2018-07-18   VERSION 8: Colour constant TC_LIGHTBLUE renamed to TC_CYAN but kept as alias for TC_CYAN
@@ -99,6 +100,7 @@
 #include <list>
 #include <string>
 using namespace Gdiplus;
+using std::string;
 using std::wstring;
 using std::list;
 
@@ -116,11 +118,25 @@ public:
 		TC_BLACK, TC_RED, TC_YELLOW, TC_GREEN, TC_CYAN,
 		TC_LIGHTBLUE = TC_CYAN, TC_BLUE, TC_MAGENTA, TC_GREY, TC_ORANGE, TC_VIOLET
 	};
+	class Version {
+	public:
+		Version(unsigned short major, unsigned short minor = 0, unsigned short bugfix = 0);
+		operator string() const;
+		bool operator<(const Version other) const;
+		bool operator==(const Version other) const;
+		bool operator!=(const Version other) const;
+		bool operator<=(const Version other) const;
+		bool operator>(const Version other) const;
+		bool operator>=(const Version other) const;
+	private:
+		static const unsigned short N_LEVELS = 3;
+		unsigned short levels[N_LEVELS];
+	};
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
 						 WPARAM wParam, LPARAM lParam);
 	static const unsigned int DEFAULT_WINDOWSIZE_X = 500;
 	static const unsigned int DEFAULT_WINDOWSIZE_Y = 500;
-	static const unsigned int VERSION = 9;
+	static const Version VERSION;
 	~Turtleizer(void);
 	// Initialises and starts a Turtleizer window
 	static Turtleizer* startUp(unsigned int sizeX = DEFAULT_WINDOWSIZE_X, unsigned int sizeY = DEFAULT_WINDOWSIZE_Y, HINSTANCE hInstance = NULL);

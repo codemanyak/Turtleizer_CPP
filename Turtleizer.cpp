@@ -1,6 +1,6 @@
 #include "Turtleizer.h"
 /*
- * Fachhochschule Erfurt www.fh-erfurt.de/ai
+ * Fachhochschule Erfurt https://ai.fh-erfurt.de
  * Fachrichtung Angewandte Informatik
  * Module: Programming
  * Theme: Prep course Programming
@@ -15,6 +15,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
  * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29   VERSION 7: API adaptation to Structorizer 3.27:
  *              New methods/functions getX(), getY(), getOrientation()
@@ -46,6 +47,8 @@
 #define WIDEN2(x) L ## x
 #define WIDEN(x) WIDEN2(x)
 #define __WFILE__ WIDEN(__FILE__)
+
+const Turtleizer::Version Turtleizer::VERSION(10, 0, 0);
 
 const LPCWSTR Turtleizer::WCLASS_NAME = TEXT("Turtleizer");
 
@@ -368,6 +371,45 @@ void Turtleizer::updateWindow(bool automatic)
 	this->autoUpdate = automatic;
 	UpdateWindow(this->hWnd);
 }
+
+Turtleizer::Version::Version(unsigned short major, unsigned short minor, unsigned short bugfix)
+{
+	this->levels[0] = major;
+	this->levels[1] = minor;
+	this->levels[2] = bugfix;
+}
+
+Turtleizer::Version::operator string() const
+{
+	char verStr[20];
+	sprintf(verStr, "%d.%d.%d", this->levels[0], this->levels[1], this->levels[2]);
+	return string(verStr);
+}
+bool Turtleizer::Version::operator<(const Version other) const
+{
+	for (unsigned short level = 0; level < N_LEVELS; level++) {
+		if (this->levels[level] < other.levels[level]) {
+			return true;
+		}
+		else if (this->levels[level] > other.levels[level]) {
+			return false;
+		}
+	}
+	return false;
+}
+bool Turtleizer::Version::operator==(const Version other) const
+{
+	for (unsigned short level = 0; level < N_LEVELS; level++) {
+		if (this->levels[level] != other.levels[level]) {
+			return false;
+		}
+	}
+	return true;
+}
+bool Turtleizer::Version::operator!=(const Version other) const { return !(*this == other); }
+bool Turtleizer::Version::operator<=(const Version other) const { return *this < other || *this == other; }
+bool Turtleizer::Version::operator>(const Version other) const { return !(*this < other) && !(*this == other); }
+bool Turtleizer::Version::operator>=(const Version other) const { return !(*this < other); }
 
 
 /////////////////////// GLOBAL FUNCTIONS FOR SIMPLICITY ///////////////////////

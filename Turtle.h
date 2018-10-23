@@ -2,7 +2,7 @@
 #ifndef TURTLE_H
 #define TURTLE_H
 /*
- * Fachhochschule Erfurt www.fh-erfurt.de/ai
+ * Fachhochschule Erfurt https://ai.fh-erfurt.de
  * Fachrichtung Angewandte Informatik
  * Module: Programming
  *
@@ -14,11 +14,11 @@
  *
  * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
- * Version: 9 (covering capabilities of Structorizer 3.28-07)
+ * Version: 10.0.0 (covering capabilities of Structorizer 3.28-07, new versioning mechanism)
  *
  * History (add on top):
  * --------------------------------------------------------
- * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
+ * 2018-07-30	VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29	new functions getX(), getY(), and getOrientation()
  * 2016-12-09	created
  */
