@@ -55,7 +55,7 @@ The codes for the standard set of ten predefined colours for the `forward()`, `b
 
 (Integral coordinate model (as used by the `fd` and `bk` routines) means that end positions of moves are rounded to the next pixels. This seems logical as the screen hasn't pixel fractions but leads to accumulating biases on sequences of traversal moves.)
 
-The only additional instruction that should be inserted in your C++ main function (e.g. exported from Structrizer) is
+The only additional instruction that should be inserted in your C++ main function (e.g. exported from [Structorizer](https://structorizer.fisch.lu)) is
 ```c++
   Turtleizer::awaitClose(); // Put this at the end of the main function
 ```
