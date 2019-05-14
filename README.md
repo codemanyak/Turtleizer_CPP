@@ -5,11 +5,11 @@ This little project is just a makeshift static library based on gdiplus and was 
 
 ## How to make use of Turtleizer_CPP in an application project
 There are several ways to come to terms with linking your application code against this library:
-1. Just copy the source and header files into the project where the Structorizer export was directed to (i.e. rather than linking Turtleizer_CPP as library you may of course integrate the few sources into your application project).
-2. Put this project into your VisualStudio solution folder next to the projects with exported turtleizer programs and make sure to update the project to your VisualStudio version. Then establish a reference (link) to the Turtleizer project in all projects needing it, configure "..\Turtleizer" as additional include directory in these projects.
+1. Just copy the source and header files into the project where the Structorizer export was directed to (i.e. rather than linking Turtleizer_CPP as library you may of course integrate the few sources into your application project, but then make sure the linker will be allowed to access to the gdiplus.lib library).
+2. Put this project into your VisualStudio solution folder next to the projects with exported turtleizer programs (you might want to simplify the generated project folder name from "Turleizer_CPP-master" to just "Turtleizer"), register the project as existing project with your VisualStudio solution and make sure to update the project to your VisualStudio version. Then establish a reference (link) to the Turtleizer project in all projects needing it, configure "..\Turtleizer" (or how the project folder may be named) as additional include directory in these projects.
 3. Compile this project separately as static library, and then (similar to the approach before) configure the Turtleizer.lib as additional linker input as well as the folder where Turtleizer.h and Turtle.h reside as additional include folder for your project.
 
-It may be difficult to work with the original project file (in cases 2 and 3), in particular if you happen to use an older VisualStudio version. In this case simply set up a new static library project, insert the header and source files and get it compiled. With up-to-date VisualStudio versions, in contrast, you may have to update the project.
+It may be difficult to work with the original project file (in cases 2 and 3), in particular if you happen to use an older VisualStudio version. In this case simply set up a new static library project, insert the header and source files and get it compiled. With up-to-date VisualStudio versions, in contrast, you may have to update the project or at least to adapt the referred SDK version in the project preferences.
 When you just import the sources (case 1 above or if you set up a new static library project around the Turtleizer_CPP sources) you must make sure to add gdiplus.lib to the dependencies of the linker and check that the folder where gdiplus.lib resides is registered among the searched library directories)
 
 **It is important that the character encoding be set to "UTF-8" (Unicode). Otherwise some trouble with string type conversion will arise. It may also be necessary to adapt the platform of the using project to Win32 (x86) if Turtleizer_CPP can't be    switched to x64.**
@@ -60,7 +60,7 @@ The only additional instruction that should be inserted in your C++ main functio
   Turtleizer::awaitClose(); // Put this at the end of the main function
 ```
 
-The only purpose of `Turtleizer::awaitClose()` is to let the main thread wait for someone closing the Turtleizer window, which automatically opens with the first called Turtleizer instruction.
+The only purpose of `Turtleizer::awaitClose()` is to let the main thread wait for someone closing the Turtleizer window, which will automatically open with the first called Turtleizer instruction.
 
 ## Additional "turtles"
 In addition to the standard Turtleizer functionality of [Structorizer](https://structorizer.fisch.lu) this library offers to add further "turtles" to the canvas.
@@ -70,7 +70,7 @@ To do this, you need the Turtleizer singleton instance first. Use method `Turtle
 You simply specify the start position via arguments `x` and `y` and provide the file path to an image file (recommended: PNG format). The resulting pointer references the new "turtle" instance. (You may sensibly derive a shared_ptr or unique_ptr from it since the `Turtle` instance is dynamically created.)
 
 You may create as many `Turtle` instances as you like (performance may become a limiting factor, of course).
-Now you can apply Turtleizer commands as method calls to these specific "turtle" instances  independently. Example:
+Now you can apply Turtleizer commands as method calls to these specific "turtle" instances independently. Example:
 
 ```c++
 Turtle* pMyCar = Turtleizer::getInstance()->addNewTurtle(200, 150, L"C:\\Users\\Public\\Pictures\\redCar.png");
@@ -82,7 +82,7 @@ forward(75);  // This moves the standard turtle independently
 
 With this respect, there is an enhanced standard procedure:
 `void clear(bool allTurtles = false);`
-This wipes the canvas from the traces of all turtles, including the additional ones, if the argument is true.
+This wipes the canvas from the traces of all turtles, including the additional ones, if the argument is true. (With the argument being false or omitted, only the standard turtle traces will be cleared.)
 
 ## License remarks
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or any later version.
