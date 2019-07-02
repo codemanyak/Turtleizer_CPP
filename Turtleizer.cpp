@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "Turtleizer.h"
 /*
  * Fachhochschule Erfurt https://ai.fh-erfurt.de
@@ -15,6 +16,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
  * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
  * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29   VERSION 7: API adaptation to Structorizer 3.27:
@@ -50,7 +52,7 @@
 
 const Turtleizer::Version Turtleizer::VERSION(10, 0, 0);
 
-const LPCWSTR Turtleizer::WCLASS_NAME = TEXT("Turtleizer");
+const Turtleizer::NameType Turtleizer::WCLASS_NAME = TEXT("Turtleizer");
 
 const Color Turtleizer::colourTable[TC_VIOLET + 1] =
 {
@@ -68,7 +70,7 @@ const Color Turtleizer::colourTable[TC_VIOLET + 1] =
 
 Turtleizer* Turtleizer::pInstance = NULL;
 
-Turtleizer::Turtleizer(wstring caption, unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance)
+Turtleizer::Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance)
 : hWnd(NULL)
 , autoUpdate(true)
 , gdiplusToken(NULL)

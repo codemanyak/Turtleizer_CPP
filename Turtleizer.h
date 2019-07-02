@@ -71,6 +71,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
  * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
  * 2018-10-09   New turtle symbol according to Structorizer versions >= 3.28
  * 2018-07-30   VERSION 9: New function clear() added (according to Structorizer 3.28-07)
@@ -201,7 +202,14 @@ public:
 private:
 	// Typename for the list of tracked line elements
 	typedef list<Turtle*> Turtles;
-	static const LPCWSTR WCLASS_NAME;			// Name of the window class
+#ifdef UNICODE
+	typedef LPCWSTR NameType;
+	typedef wstring String;
+#else
+	typedef LPCSTR NameType;
+	typedef string String;
+#endif /*UNICODE*/
+	static const NameType WCLASS_NAME;			// Name of the window class
 	static const Color colourTable[TC_VIOLET + 1];	// Look-up table for colour codes
 	static Turtleizer* pInstance;				// The singleton instance
 	ULONG_PTR gdiplusToken;						// Token of the GDI+ session
@@ -213,7 +221,7 @@ private:
 	Turtles turtles;						// List of turtles to be handled here
 	Color backgroundColour;					// Current background colour
 	// Hidden constructor - use Turtleizer::startUp() to create an instance!
-	Turtleizer(wstring caption, unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance = NULL);
+	Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance = NULL);
 	// Callback method for refresh (OnPaint event)
 	VOID onPaint(HDC hdc);
 	// Listener method (parallel thread) FIXME: better static?

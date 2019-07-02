@@ -11,10 +11,12 @@
  *
  * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
- * Version: 10.0.0 (covering capabilities of Structorizer 3.28-07, new versioning mechanism)
+ * Version: 10.0.1 (covering capabilities of Structorizer 3.28-07)
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
+ * 2018-10-23   VERSION 10.0.0: Casts added to avoid compiler warnings.
  * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29   New methods getX(), getY(), getOrientation() implemented
  * 2016-12-09   Created for VERSION 6
@@ -31,7 +33,7 @@
 #define WIDEN(x) WIDEN2(x)
 #define __WFILE__ WIDEN(__FILE__)
 
-const LPCWSTR Turtle::TURTLE_IMAGE_FILE = TEXT("turtle.png");
+const LPCWSTR Turtle::TURTLE_IMAGE_FILE = WIDEN("turtle.png");
 
 Turtle::Turtle(int x, int y, LPCWSTR imagePath)
 : turtleImagePath(NULL)
