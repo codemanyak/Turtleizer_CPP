@@ -15,7 +15,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
- * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
+ * 2019-07-08   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2, #3
  * 2018-10-23   VERSION 10.0.0: Casts added to avoid compiler warnings.
  * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29   New methods getX(), getY(), getOrientation() implemented
@@ -36,7 +36,7 @@
 const LPCWSTR Turtle::TURTLE_IMAGE_FILE = WIDEN("turtle.png");
 
 Turtle::Turtle(int x, int y, LPCWSTR imagePath)
-: turtleImagePath(NULL)
+: turtleImagePath(nullptr)
 , turtleWidth(35)	// Just some default
 , turtleHeight(35)	// Just some default
 , pos((REAL)x, (REAL)y)
@@ -46,7 +46,7 @@ Turtle::Turtle(int x, int y, LPCWSTR imagePath)
 , defaultColour(Color::Black)
 , pTurtleizer(Turtleizer::getInstance())
 {
-	if (imagePath != NULL) {
+	if (imagePath != nullptr) {
 		this->turtleImagePath = this->makeFilePath(imagePath, false);
 	}
 	else {
@@ -54,7 +54,7 @@ Turtle::Turtle(int x, int y, LPCWSTR imagePath)
 	}
 	// Store the size of the turtle symbol
 	Image* image = new Image(this->turtleImagePath);
-	if (image != NULL) {
+	if (image != nullptr) {
 		this->turtleWidth = image->GetWidth();
 		this->turtleHeight = image->GetHeight();
 		delete image;
@@ -234,7 +234,7 @@ LPCWSTR Turtle::makeFilePath(LPCWSTR filename, bool addProductPath) const
 	}
 	size_t pathLen = 0;
 	if (addProductPath || filename == nullptr) {
-		pathLen = (pPosSlash != NULL) ? pPosSlash - pMyPath : wcslen(pMyPath);
+		pathLen = (pPosSlash != nullptr) ? pPosSlash - pMyPath : wcslen(pMyPath);
 	}
 	size_t buffLen = pathLen + wcslen(filename) + 2;
 	WCHAR* pFilePath = new WCHAR[buffLen];
@@ -265,7 +265,13 @@ void Turtle::draw(Graphics& gr) const
 		// Display an image
 		//Image* image = new Image(L"Turtle.png");
 		Image* image = new Image(this->turtleImagePath);
-		PointF pointF(-(REAL)this->turtleWidth / (REAL)2.0, -(REAL)this->turtleHeight / (REAL)2.0);
+		// START KGU 2019-07-08 Workaround #3
+		//PointF pointF(-(REAL)this->turtleWidth / (REAL)2.0, -(REAL)this->turtleHeight / (REAL)2.0);
+		REAL scaleX = gr.GetDpiX() / image->GetHorizontalResolution();
+		REAL scaleY = gr.GetDpiY() / image->GetVerticalResolution();
+		PointF pointF(-(REAL)this->turtleWidth * scaleX / (REAL)2.0,
+			-(REAL)this->turtleHeight * scaleY / (REAL)2.0);
+		// END KGU 2019-07-08
 #if DEBUG_PRINT
 		printf("The width of the image is %u.\n", this->turtleWidth);
 		printf("The height of the image is %u.\n", this->turtleHeight);
