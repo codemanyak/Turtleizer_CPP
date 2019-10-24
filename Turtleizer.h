@@ -11,7 +11,7 @@
  * (http://structorizer.fisch.lu) for a simple C++  environment
  * Theme: Prep course Programming
  * Author: Kay Gürtzig
- * Version: 10.0.0
+ * Version: 10.0.1
  *
  * Usage:
  * 1. Configure a link to the compiled library (Turtleizer.lib) in your (Console) application
