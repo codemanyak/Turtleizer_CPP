@@ -14,7 +14,7 @@
  *
  * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
- * Version: 10.0.0 (covering capabilities of Structorizer 3.28-07, new versioning mechanism)
+ * Version: 10.0.1 (covering capabilities of Structorizer 3.28-07, new versioning mechanism)
  *
  * History (add on top):
  * --------------------------------------------------------

@@ -82,7 +82,7 @@ forward(75);  // This moves the standard turtle independently
 
 With this respect, there is an enhanced standard procedure:
 `void clear(bool allTurtles = false);`
-This wipes the canvas from the traces of all turtles, including the additional ones, if the argument is true. (With the argument being false or omitted, only the standard turtle traces will be cleared.)
+This wipes the traces of the turtles, including the additional ones if the argument is true, from the canvas. (With the argument being false or omitted, only the standard turtle traces will be cleared.)
 
 ## License remarks
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or any later version.

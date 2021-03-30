@@ -50,7 +50,7 @@
 #define WIDEN(x) WIDEN2(x)
 #define __WFILE__ WIDEN(__FILE__)
 
-const Turtleizer::Version Turtleizer::VERSION(10, 0, 0);
+const Turtleizer::Version Turtleizer::VERSION(10, 0, 1);
 
 const Turtleizer::NameType Turtleizer::WCLASS_NAME = TEXT("Turtleizer");
 
