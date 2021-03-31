@@ -11,10 +11,11 @@
  *
  * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
- * Version: 10.0.1 (covering capabilities of Structorizer 3.28-07)
+ * Version: 11.0.0 (covering capabilities of Structorizer 3.30-12, functional GUI)
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2021-03-29   VERSION 11.0.0: Enh. #6 (tracking of the bounds and new internal methods)
  * 2019-07-08   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2, #3
  * 2018-10-23   VERSION 10.0.0: Casts added to avoid compiler warnings.
  * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
@@ -25,6 +26,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <cstring>
+#include <cassert>
 #include "Turtle.h"
 #include "Turtleizer.h"
 
@@ -40,6 +42,7 @@ Turtle::Turtle(int x, int y, LPCWSTR imagePath)
 , turtleWidth(35)	// Just some default
 , turtleHeight(35)	// Just some default
 , pos((REAL)x, (REAL)y)
+, bounds((REAL)x, (REAL)y, (REAL)1, (REAL)1)
 , penIsDown(true)
 , isVisible(true)
 , orient(0.0)
@@ -82,6 +85,7 @@ void Turtle::forward(double pixels, Color col)
 	this->pos.Y -= (REAL)(pixels * sin(angle));
 	if (this->penIsDown) {
 		this->elements.push_back(TurtleLine(oldP.X, oldP.Y, this->pos.X, this->pos.Y, col));
+		RectF::Union(this->bounds, this->bounds, RectF(this->pos.X, this->pos.Y, 1, 1));
 	}
 	this->refresh(oldP);
 }
@@ -104,6 +108,7 @@ void Turtle::fd(int pixels, Color col)
 	this->pos.Y -= (REAL)round(pixels * sin(angle));
 	if (this->penIsDown) {
 		this->elements.push_back(TurtleLine(oldP.X, oldP.Y, this->pos.X, this->pos.Y, col));
+		RectF::Union(this->bounds, this->bounds, RectF(this->pos.X, this->pos.Y, 1, 1));
 	}
 	this->refresh(oldP);
 }
@@ -179,6 +184,7 @@ void Turtle::setPenColor(unsigned char red, unsigned char green, unsigned char b
 void Turtle::clear()
 {
 	this->elements.clear();
+	this->bounds = RectF(this->pos.X, this->pos.Y, 1.0f, 1.0f);
 	this->refresh(this->pos);
 }
 
@@ -204,6 +210,21 @@ double Turtle::getOrientation() const
 	return -ori;
 }
 
+RectF Turtle::getBounds() const
+{
+	// Ensure the current turtle position is contained by the bound.
+	if (!this->bounds.Contains(this->pos)) {
+		RectF myBounds(this->pos.X, this->pos.Y, 1.0f, 1.0f);
+		RectF::Union(myBounds, myBounds, this->bounds);
+		return myBounds;
+	}
+	return this->bounds;
+}
+
+bool Turtle::isTurtleShown() const
+{
+	return this->isVisible;
+}
 
 // Refreshes the window i.e. invalidates the region between `oldPos´
 // and this->pos and then updates the window
@@ -221,9 +242,10 @@ void Turtle::refresh(const PointF& oldPos, bool forceIconSize) const
 
 // Composes a file path from the path of this source file (project
 // folder) and the given file name.
-// (if the image file name isn't given, the turtle image will be used
+// (if the image file name isn't given, the turtle image will be used)
 LPCWSTR Turtle::makeFilePath(LPCWSTR filename, bool addProductPath) const
 {
+	assert(filename != nullptr);
 	WCHAR delimiter = L'/';
 	LPCWSTR pMyPath = __WFILE__;
 	LPCWSTR pPosSlash = wcsrchr(pMyPath, L'/');
@@ -233,12 +255,12 @@ LPCWSTR Turtle::makeFilePath(LPCWSTR filename, bool addProductPath) const
 		delimiter = L'\\';
 	}
 	size_t pathLen = 0;
-	if (addProductPath || filename == nullptr) {
+	if (addProductPath) {
 		pathLen = (pPosSlash != nullptr) ? pPosSlash - pMyPath : wcslen(pMyPath);
 	}
 	size_t buffLen = pathLen + wcslen(filename) + 2;
 	WCHAR* pFilePath = new WCHAR[buffLen];
-	if (addProductPath || filename == nullptr) {
+	if (addProductPath) {
 		wcsncpy_s(pFilePath, buffLen, pMyPath, pathLen);
 		pFilePath[pathLen++] = delimiter;
 	}

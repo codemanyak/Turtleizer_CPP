@@ -11,13 +11,13 @@
  * (http://structorizer.fisch.lu) for a simple C++  environment
  * Theme: Prep course Programming
  * Author: Kay Gürtzig
- * Version: 10.0.1
+ * Version: 11.0.0
  *
  * Usage:
  * 1. Configure a link to the compiled library (Turtleizer.lib) in your (Console) application
  *    (e.g. by establishing a project dependency within the same Solution folder).
  * 2. Register the Turtleizer project folder as additional include directory
- * 3. Adhere to the following programming paragigm:
+ * 3. Adhere to the following programming paradigm:
  *
  * #include "Turtleizer.h"
  * int main(int argc, char* argv)
@@ -40,7 +40,7 @@
  *     //		getX(), getY()
  *     //		getOrientation()
  *     // The functions forward/fd und backward/bk may be equipped with a second
- *     // Argument of type Turtleizer::TurtleColour, i.e. with one of the constants
+ *     // argument of type Turtleizer::TurtleColour, i.e. with one of the constants
  *     // (where Turtleizer::TC_BLACK is the default):
  *     //		Turtleizer::TC_BLACK,
  *     //		Turtleizer::TC_RED,
@@ -53,7 +53,7 @@
  *     //		Turtleizer::TC_ORANGE,
  *     //		Turtleizer::TC_VIOLET
  *     // Be aware that the functions forward and fd are not exactly equivalent:
- *     // forward(...) works with an floating-point coordinate model, whereas
+ *     // forward(...) works with a floating-point coordinate model, whereas
  *     // fd(...) adheres to a strict integer coordinate model which may rapidly
  *     // lead to noticeable biases, particularly with many short, traversal ways.
  *     // The same holds for the pair backward / bk, of course.
@@ -63,14 +63,16 @@
  * }
  *
  * The automatic update of the drawing area is initially done after each drawing step,
- * but then be done ever less frequently with the growing number of elements (traces)
- * to be rendered.
+ * but will then be done ever less frequently with the growing number of elements (traces)
+ * to be rendered. The proble is that to filter the elements by the damaged region does
+ * hardly cost less efforts than to draw them rightaway.
  * By invoking updateWindow(false) the regular update may be suppressed entirely. By
  * using updateWindow(true) you may re-enable the regular update.
  * BOTH call induce an immediate window update.
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2021-03-30   VERSION 11.0.0: GUI extensions according to #6
  * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
  * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
  * 2018-10-09   New turtle symbol according to Structorizer versions >= 3.28
@@ -97,6 +99,7 @@
 
 #include <windows.h>
 #include <gdiplus.h>
+#include <commctrl.h>
 #include <cstdio>
 #include <list>
 #include <string>
@@ -137,6 +140,8 @@ public:
 						 WPARAM wParam, LPARAM lParam);
 	static const unsigned int DEFAULT_WINDOWSIZE_X = 500;
 	static const unsigned int DEFAULT_WINDOWSIZE_Y = 500;
+	// Maximum and minimum zoom factor, zoom change factor
+	static const float MAX_ZOOM, MIN_ZOOM, ZOOM_RATE;
 	static const Version VERSION;
 	~Turtleizer(void);
 	// Initialises and starts a Turtleizer window
@@ -202,6 +207,13 @@ public:
 private:
 	// Typename for the list of tracked line elements
 	typedef list<Turtle*> Turtles;
+	// Menudefinition structure
+	struct MenuDef {
+		LPCWSTR caption;
+		ACCEL accelerator;
+		BOOL (*method)(bool);
+		bool isCheck;
+	};
 #ifdef UNICODE
 	typedef LPCWSTR NameType;
 	typedef wstring String;
@@ -211,21 +223,74 @@ private:
 #endif /*UNICODE*/
 	static const NameType WCLASS_NAME;			// Name of the window class
 	static const Color colourTable[TC_VIOLET + 1];	// Look-up table for colour codes
+	static const int IDM_CONTEXT_MENU = 20000;	// Start identifier for context menu items
+	static const int IDS_STATUSBAR = 21000;		// Identifier for the status bar
+	static const int STATUSBAR_ICON_IDS[];		// Ids of status bar part icons (also specifying the part count)
+	static const MenuDef MENU_DEFINITIONS[];	// Context menu specification
 	static Turtleizer* pInstance;				// The singleton instance
 	ULONG_PTR gdiplusToken;						// Token of the GDI+ session
 	HWND hWnd;									// Window handle
+	// START KGU 2021-03-28: Enh. #6 GUI extensions
+	int* statusbarPartWidths;					// Array of statusbar part text widths
+	HWND hStatusbar;							// Status bar handle
+	HMENU hContextMenu;							// Context menu handle
+	HACCEL hAccel;								// Handle of the accelerator table
+	float zoomFactor;							// current zoom factor (1.0f corresponds to 100%)
+	PointF displacement;						// Offset of the coordinate origin (never negative)
+	// END KGU 2021-03-28
 	MSG msg;									// Message instance for user interaction
 	WNDCLASS wndClass;							// Keeps the created window class
 	GdiplusStartupInput gdiplusStartupInput;	// Structure needed for GdiplusStartup
 	bool autoUpdate;						// Whether the window is to be updated on every movement
 	Turtles turtles;						// List of turtles to be handled here
 	Color backgroundColour;					// Current background colour
+	Point home0;							// Home position of the standard turtle
+	bool showStatusbar;						// Visibility of the statusbar
+	bool popupCoords;						// Whether coordinates are to be shown as popup
+	bool showAxes;							// Whether coordinate axes are to be drawn
+	bool snapLines;							// Snap mode (default: true)
+	float snapRadius;						// Snap radius
 	// Hidden constructor - use Turtleizer::startUp() to create an instance!
 	Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance = NULL);
 	// Callback method for refresh (OnPaint event)
 	VOID onPaint(HDC hdc);
+	// START KGU 2021-03-28: Enh. #6 GUI extensions
+	// Callback method for context menu event
+	VOID onContextMenu(int x, int y);
+	// General callback method for command handling
+	BOOL onCommand(WPARAM wParam, LPARAM lParam);
+	// Updates the information on the status bar
+	void updateStatusbar();
+	// Updates item visibility and checkboxes of the context menu
+	void updateContextMenu();
+	// Retrieves the combined bounds of all turtles
+	RectF getBounds() const;
+	// Menu / accelerator handlers
+	static BOOL handleGotoCoord(bool testOnly);
+	static BOOL handleGotoTurtle(bool testOnly);
+	static BOOL handleGotoHome(bool testOnly);
+	static BOOL handleGotoOrigin(bool testOnly);
+	static BOOL handleZoom100(bool testOnly);
+	static BOOL handleZoomBounds(bool testOnly);
+	static BOOL handleShowAll(bool testOnly);
+	static BOOL handleToggleAxes(bool testOnly);
+	static BOOL handleToggleTurtle(bool testOnly);
+	static BOOL handleSetBackground(bool testOnly);
+	static BOOL handleToggleCoords(bool testOnly);
+	static BOOL handleToggleStatus(bool testOnly);
+	static BOOL handleToggleSnap(bool testOnly);
+	static BOOL handleSetSnapRadius(bool testOnly);
+	static BOOL handleToggleUpdate(bool testOnly);
+	static BOOL handleExportCSV(bool testOnly);
+	static BOOL handleExportPNG(bool testOnly);
+	static BOOL handleExportSVG(bool testOnly);
+	// END KGU 2021-03-28
 	// Listener method (parallel thread) FIXME: better static?
 	void listen();
+	// Composes a file path from the path of this source file (project
+	// folder) if and the given file name `filename´.
+	// (if the image file name isn't given, the turtle image will be used)
+	LPCWSTR getAbsolutePath(LPCWSTR filename) const;
 };
 
 /////////////////////// GLOBAL FUNCTIONS FOR SIMPLICITY ///////////////////////

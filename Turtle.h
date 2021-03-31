@@ -14,10 +14,11 @@
  *
  * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
- * Version: 10.0.1 (covering capabilities of Structorizer 3.28-07, new versioning mechanism)
+ * Version: 11.0.0 (covering capabilities of Structorizer 3.30-12, functional GUI)
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2021-03-29   VERSION 11.0.0: New methods isTurtleShown() and getBounds() for #6
  * 2018-07-30	VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29	new functions getX(), getY(), and getOrientation()
  * 2016-12-09	created
@@ -95,7 +96,10 @@ public:
 	double getY() const;
 	// Returns the current orientation in degrees from North (clockwise = positive)
 	double getOrientation() const;
-
+	// Returns true if the turtle visibiity is on
+	bool isTurtleShown() const;
+	// Returns the current drawing bounds of this turtle
+	RectF getBounds() const;
 protected:
 	// Type name for the list of tracked line elements
 	typedef list<TurtleLine> Elements;
@@ -104,7 +108,8 @@ private:
 	const Turtleizer* pTurtleizer;				// The singleton Turtleizer instance
 	LPCWSTR	turtleImagePath;					// The derived turtle file path
 	UINT turtleWidth, turtleHeight;				// The turtle image extensions
-	PointF pos;								// current turtle position
+	Gdiplus::PointF pos;						// current turtle position
+	Gdiplus::RectF bounds;						// current bounds of the trayectory
 	double orient;							// current orientation in degrees
 	bool penIsDown;							// Whether the pen is ready to draw
 	bool isVisible;							// Whether the turtle itself ought to be visible
