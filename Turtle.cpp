@@ -15,7 +15,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
- * 2021-03-29   VERSION 11.0.0: Enh. #6 (tracking of the bounds and new internal methods)
+ * 2021-04-02   VERSION 11.0.0: Enh. #6 (tracking of the bounds and new internal methods)
  * 2019-07-08   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2, #3
  * 2018-10-23   VERSION 10.0.0: Casts added to avoid compiler warnings.
  * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
@@ -232,11 +232,18 @@ void Turtle::refresh(const PointF& oldPos, bool forceIconSize) const
 {
 	// Consider rotation, so use maximum diagonal
 	LONG halfIconSize = (forceIconSize || this->isVisible) ? (LONG)(max(this->turtleHeight, this->turtleWidth) / sqrt(2.0) +1) : 1L;
-	RECT rect;
-	rect.left = (LONG)floor(min(oldPos.X, this->pos.X)) - halfIconSize;
-	rect.right = (LONG)ceil(max(oldPos.X, this->pos.X)) + halfIconSize;
-	rect.top = (LONG)floor(min(oldPos.Y, this->pos.Y)) - halfIconSize;
-	rect.bottom = (LONG)ceil(max(oldPos.Y, this->pos.Y)) + halfIconSize;
+	// START KGU 2021-04-02: Issue #6 We must consider transformations - this is not the window RECT!
+	//RECT rect;
+	//rect.left = (LONG)floor(min(oldPos.X, this->pos.X)) - halfIconSize;
+	//rect.right = (LONG)ceil(max(oldPos.X, this->pos.X)) + halfIconSize;
+	//rect.top = (LONG)floor(min(oldPos.Y, this->pos.Y)) - halfIconSize;
+	//rect.bottom = (LONG)ceil(max(oldPos.Y, this->pos.Y)) + halfIconSize;
+	REAL left = floor(min(oldPos.X, this->pos.X)) - halfIconSize;
+	REAL right = ceil(max(oldPos.X, this->pos.X)) + halfIconSize;
+	REAL top = floor(min(oldPos.Y, this->pos.Y)) - halfIconSize;
+	REAL bottom = ceil(max(oldPos.Y, this->pos.Y)) + halfIconSize;
+	RectF rect(left, top, right - left, bottom - top);
+	// END KGU 2021-04-02
 	this->pTurtleizer->refresh(rect, this->elements.size());
 }
 
@@ -283,7 +290,9 @@ void Turtle::draw(Graphics& gr) const
 	//graphics.DrawString(L"I forced this damned thing!", -1, &font, pointF, &brush);
 
 	if (this->isVisible) {
-		Gdiplus::REAL matrix[6];
+		Matrix transf;
+		gr.GetTransform(&transf);
+		//Gdiplus::REAL matrix[6];
 		// Display an image
 		//Image* image = new Image(L"Turtle.png");
 		Image* image = new Image(this->turtleImagePath);
@@ -301,12 +310,14 @@ void Turtle::draw(Graphics& gr) const
 		gr.TranslateTransform(this->pos.X, this->pos.Y);
 		gr.RotateTransform(-(REAL)this->orient);
 
-		Matrix transf;
-		gr.GetTransform(&transf);
-		Gdiplus::Status status = transf.GetElements(matrix);
+		//Matrix transf;
+		//gr.GetTransform(&transf);
+		//Gdiplus::Status status = transf.GetElements(matrix);
 
 		gr.DrawImage(image, pointF);
+		// Restore original transform
 		gr.ResetTransform();
+		gr.SetTransform(&transf);
 		gr.Flush();
 		delete image;
 	}

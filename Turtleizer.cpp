@@ -17,7 +17,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
- * 2021-03-30   VERSION 11.0.0: Additions for #6 (GUI functionality added)
+ * 2021-04-02   VERSION 11.0.0: Additions for #6 (GUI functionality added)
  * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
  * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
  * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
@@ -59,22 +59,17 @@ const Turtleizer::NameType Turtleizer::WCLASS_NAME = TEXT("Turtleizer");
 
 const Color Turtleizer::colourTable[TC_VIOLET + 1] =
 {
-	Color(0, 0, 0),	// TC_BLACK
-	Color(255, 0, 0),	// TC_RED
-	Color(255, 255, 0),	// TC_YELLOW
-	Color(0, 255, 0),	// TC_GREEN
-	Color(0, 255, 255),	// TC_LIGHTBLUE = TC_CYAN
-	Color(0, 0, 255),	// TC_BLUE
-	Color(255, 0, 255),	// TC_MAGENTA
+	Color(0, 0, 0),			// TC_BLACK
+	Color(255, 0, 0),		// TC_RED
+	Color(255, 255, 0),		// TC_YELLOW
+	Color(0, 255, 0),		// TC_GREEN
+	Color(0, 255, 255),		// TC_LIGHTBLUE = TC_CYAN
+	Color(0, 0, 255),		// TC_BLUE
+	Color(255, 0, 255),		// TC_MAGENTA
 	Color(127, 127, 127),	// TC_GREY
-	Color(255, 127, 0),	// TC_ORANGE
-	Color(127, 0, 255)	// TC_VIOLETT
+	Color(255, 127, 0),		// TC_ORANGE
+	Color(127, 0, 255)		// TC_VIOLETT
 };
-
-// START KGU 2021-03-28: Enhancements for #6
-const float Turtleizer::MAX_ZOOM = 2.0f;
-const float Turtleizer::MIN_ZOOM = 0.01f;
-const float Turtleizer::ZOOM_RATE = 0.9f;
 
 // We cannot rely on resource definitions as this is a static library...
 const int Turtleizer::STATUSBAR_ICON_IDS[] = {
@@ -86,47 +81,6 @@ const int Turtleizer::STATUSBAR_ICON_IDS[] = {
 	IDI_SNAP_LINES
 };
 
-/* This array specifies the menu captions, accelerator keys and handler methods for all
- * the GUI functions of Turtleizer according to issue #6.
- * The aim was to accept both the lower and upper case version of accelerator letters, but
- * no attempt to make this happen worked. To specify them as virtual keys was recommended
- * by the Microsoft doc but no VK_A ... VK_Z macros are defined in the WinAPI. The VkKeyScan
- * macro was suggested in a Stack Overflow forum, e.g. {FVIRTKEY, LOBYTE(VkKeyScanA('G'))}.
- * But in the event it does not make the accelerator case-insensitive, either - this way
- * only the lower-case letters are accepted, but at least the Ctrl-S combination works now
- * (it did not with {FCONTROL, 'S'}). The lower-case letters are more user-friendly than
- * their upper-case counterparts, so we leave it as is.
- * (A run-time attempt to add a second entry with lower-case Ascii and same command id for
- * any plain upper-case letter entry did not work, either, by the way (may have confused the
- * accelerator map generator).
- */
-const Turtleizer::MenuDef Turtleizer::MENU_DEFINITIONS[] = {
-	{L"Scroll to coordinate ...\tG", {FVIRTKEY, LOBYTE(VkKeyScanA('G'))}, Turtleizer::handleGotoCoord, false},
-	{L"Scroll to turtle positon\tEnd", {FVIRTKEY, VK_END}, Turtleizer::handleGotoTurtle, false},
-	{L"Scroll to home position\tPos1", {FVIRTKEY, VK_HOME}, Turtleizer::handleGotoHome, false},
-	{L"Scroll to origin (0,0)\t0", {0, '0'}, Turtleizer::handleGotoOrigin, false},
-	{NULL, {}, nullptr, false},
-	{L"Reset zoom to 100%\t1", {0, '1'}, Turtleizer::handleZoom100, false},
-	{L"Zoom to the bounds\tZ", {FVIRTKEY, LOBYTE(VkKeyScanA('Z'))}, Turtleizer::handleZoomBounds, false},
-	{NULL, {}, nullptr, false},
-	{L"Make all drawing visible\tA",{FVIRTKEY, LOBYTE(VkKeyScanA('A'))}, Turtleizer::handleShowAll, false},
-	{L"Show axes of coordinates\tO", {FVIRTKEY, LOBYTE(VkKeyScanA('O'))}, Turtleizer::handleToggleAxes, true},
-	{NULL, {}, nullptr, false},
-	{L"Show turtle\tT", {FVIRTKEY, LOBYTE(VkKeyScanA('T'))}, Turtleizer::handleToggleTurtle, true},
-	{L"Set background colour ...\tB", {FVIRTKEY, LOBYTE(VkKeyScanA('B'))}, Turtleizer::handleSetBackground, false},
-	{NULL, {}, nullptr, false},
-	{L"Show statusbar\tS", {FVIRTKEY, LOBYTE(VkKeyScanA('S'))}, Turtleizer::handleToggleStatus, true},
-	{L"Pop up coordinates\tC", {FVIRTKEY, LOBYTE(VkKeyScanA('C'))}, Turtleizer::handleToggleCoords, true},
-	{L"Snap lines (else: points only)\tL", {FVIRTKEY, LOBYTE(VkKeyScanA('L'))}, Turtleizer::handleToggleSnap, true},
-	{L"Set measuring snap radius ...\tR", {FVIRTKEY, LOBYTE(VkKeyScanA('R'))}, Turtleizer::handleSetSnapRadius, false},
-	{NULL, {}, nullptr, false},
-	{L"Update on every turtle action\tU", {FVIRTKEY, LOBYTE(VkKeyScanA('U'))}, Turtleizer::handleToggleUpdate, true},
-	{NULL, {}, nullptr, false},
-	{L"Export drawing items as CSV ...\tX", {FVIRTKEY, LOBYTE(VkKeyScanA('X'))}, Turtleizer::handleExportCSV, false},
-	{L"Export drawing as PNG ...\tCtrl-S", {FCONTROL | FVIRTKEY, LOBYTE(VkKeyScanA('S'))}, Turtleizer::handleExportPNG, false},
-	{L"Export drawing as SVG ...\tV", {FVIRTKEY, LOBYTE(VkKeyScanA('V'))}, Turtleizer::handleExportSVG, false}
-};
-// END KGU 2021-03-28
 
 Turtleizer* Turtleizer::pInstance = NULL;
 
@@ -140,18 +94,9 @@ HINSTANCE get_hInstance()
 Turtleizer::Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance)
 	: hWnd(NULL)
 	, hStatusbar(NULL)
-	, hContextMenu(NULL)
-	, hAccel(NULL)
-	, autoUpdate(true)
 	, gdiplusToken(NULL)
 	, backgroundColour(Color::White)
 	, showStatusbar(true)
-	, snapLines(true)
-	, snapRadius(5.0f)
-	, popupCoords(true)
-	, showAxes(false)
-	, displacement(0, 0)
-	, zoomFactor(1.0)
 	, statusbarPartWidths(nullptr)
 {
 	// Initialize GDI+.
@@ -199,9 +144,29 @@ Turtleizer::Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, H
 	printf("Current file: %s\n", __FILE__);
 #endif /*DEBUG_PRINT*/
 
-	// START KGU 2021-03-28: Enh. #6 (new GUI functions in correspondence to Structorizer)
-	//LPCTSTR lpszDllName = L"C:\\Windows\\System32\\ComCtl32.dll";
-	//DWORD dwVer = GetVersion(lpszDllName);
+}
+
+Turtleizer::~Turtleizer(void)
+{
+	GdiplusShutdown(this->gdiplusToken);
+	for (Turtles::iterator itr = this->turtles.begin(); itr != this->turtles.end(); ++itr) {
+		delete *itr;
+		*itr = nullptr;
+	}
+}
+
+// Returns the instance of the Turtleizer if there is any
+Turtleizer* Turtleizer::getInstance()
+{
+	return pInstance;
+}
+
+// START KGU 2021-03-28: Enh. #6 (new GUI functions in correspondence to Structorizer)
+void Turtleizer::setupWindowAddons(HINSTANCE hInstance)
+{
+	if (hInstance == NULL) {
+		hInstance = get_hInstance();
+	}
 
 	// Ensure that the common control DLL is loaded.
 	//InitCommonControls();	// is not found by the linker (though recommended to call)
@@ -221,7 +186,7 @@ Turtleizer::Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, H
 	// Get the coordinates of the parent window's client area.
 	RECT rcClient;
 	GetClientRect(this->hWnd, &rcClient);
-	const int nParts = sizeof(STATUSBAR_ICON_IDS)/sizeof(int);	// Number of status bar regions (temporarily)
+	const int nParts = sizeof(STATUSBAR_ICON_IDS) / sizeof(int);	// Number of status bar regions (temporarily)
 	this->statusbarPartWidths = new int[nParts];
 	int paParts[nParts];
 	// FIXME
@@ -243,9 +208,6 @@ Turtleizer::Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, H
 		int iconId = STATUSBAR_ICON_IDS[i];
 		if (iconId > 0) {
 			// This will not work while Turtleizer_CPP is used as static library
-			if (i == nParts - 1) {
-				iconId = this->snapLines ? IDI_SNAP_LINES : IDI_SNAP_POINTS;
-			}
 			HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(STATUSBAR_ICON_IDS[i]));
 			SendMessage(this->hStatusbar, SB_SETICON, i, (LPARAM)hIcon);
 			if (i == nParts - 1) {
@@ -253,54 +215,11 @@ Turtleizer::Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, H
 			}
 		}
 	}
-	wchar_t statusBuffer[256];
-	wsprintf(statusBuffer, L"(%i, %i)", sizeX/2, sizeY/2);
-	SendMessage(this->hStatusbar, SB_SETTEXT, 0, (LPARAM)statusBuffer);
-	wsprintf(statusBuffer, L"(%i, %i) 0.00°", sizeX / 2, sizeY / 2);
-	SendMessage(this->hStatusbar, SB_SETTEXT, 1, (LPARAM)statusBuffer);
-	wsprintf(statusBuffer, L"%i x %i", sizeX, sizeY);
-	SendMessage(this->hStatusbar, SB_SETTEXT, 2, (LPARAM)statusBuffer);
-	wsprintf(statusBuffer, L"0 .. %i : 0 .. %i", sizeX, sizeY);
-	SendMessage(this->hStatusbar, SB_SETTEXT, 3, (LPARAM)statusBuffer);
-	wsprintf(statusBuffer, L"100%%");
-	SendMessage(this->hStatusbar, SB_SETTEXT, 4, (LPARAM)statusBuffer);
-	if (!hasSnapModeIcon) {
-		wsprintf(statusBuffer, this->snapLines ? L"+ → /" : L"+ → ▪");
-		SendMessage(this->hStatusbar, SB_SETTEXT, 5, (LPARAM)statusBuffer);
-	}
 
-	// Prepare Accelerators
-	const int nMenuItems = sizeof(MENU_DEFINITIONS) / sizeof(MenuDef);
-	ACCEL accels[nMenuItems];	// We may not use all of the elements
-	int nAccels = 0;
-	for (int i = 0; i < nMenuItems; i++) {
-		const MenuDef* def = &MENU_DEFINITIONS[i];
-		if (def->caption != NULL && def->accelerator.key !=0) {
-			accels[nAccels] = def->accelerator;
-			accels[nAccels++].cmd = IDM_CONTEXT_MENU + i;
-		}
-	}
-	this->hAccel = CreateAcceleratorTable(accels, nAccels);
-	// END KGU 2021-03-28
-}
+	this->pCanvas = new TurtleCanvas(*this, this->hWnd);
 
-Turtleizer::~Turtleizer(void)
-{
-	GdiplusShutdown(this->gdiplusToken);
-	if (this->hAccel != NULL) {
-		DestroyAcceleratorTable(this->hAccel);
-	}
-	for (Turtles::iterator itr = this->turtles.begin(); itr != this->turtles.end(); ++itr) {
-		delete *itr;
-		*itr = nullptr;
-	}
 }
-
-// Returns the instance of the Turtleizer if there is any
-Turtleizer* Turtleizer::getInstance()
-{
-	return pInstance;
-}
+// END KGU 2021-03-28
 
 // Initialisation method wrapping the private constructor
 Turtleizer* Turtleizer::startUp(unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance)
@@ -311,9 +230,12 @@ Turtleizer* Turtleizer::startUp(unsigned int sizeX, unsigned int sizeY, HINSTANC
 		pInstance = new Turtleizer(WCLASS_NAME, sizeX, sizeY, hInstance);
 		// ToDo set up the worker thread that is responding to the events
 		pInstance->turtles.push_back(new Turtle(sizeX / 2, sizeY / 2));
+		pInstance->home0 = Point(sizeX / 2, sizeY / 2);
+		pInstance->setupWindowAddons(hInstance);
 	}
 	ShowWindow(pInstance->hWnd, nCmdShow);
 	UpdateWindow(pInstance->hWnd);
+	pInstance->updateStatusbar();
 	return pInstance;
 }
 
@@ -439,16 +361,9 @@ double Turtleizer::getOrientation() const
 }
 
 // Refresh the window (i. e. invalidate the region between oldPos and this->pos) 
-void Turtleizer::refresh(const RECT& rect, int nElements) const
+void Turtleizer::refresh(const RectF& rect, int nElements) const
 {
-	InvalidateRect(this->hWnd, &rect, TRUE);
-	if (this->autoUpdate
-		// START KGU4 2016-11-02: Reduce degrading of drawing speed with growing history
-		&& (nElements % (nElements / 20 + 1) == 0)
-		// END KGU4 2016-11-02
-		) {
-		UpdateWindow(this->hWnd);
-	}
+	pCanvas->redraw(rect, nElements);
 }
 
 // Creates and adds a new turtle symbolized by the the icon specifed by the given imagPath
@@ -479,30 +394,42 @@ LRESULT CALLBACK Turtleizer::WndProc(HWND hWnd, UINT message,
 		printf("WM_PAINT...\n");	// DEBUG
 #endif /*DEBUG_PRINT*/
 		hdc = BeginPaint(hWnd, &ps);
-		pInstance->onPaint(hdc);	// instance-specific refresh
+		//pInstance->onPaint(hdc);	// instance-specific refresh
+		//pInstance->pCanvas->repaint(hdc);
 		EndPaint(hWnd, &ps);
+		pInstance->updateStatusbar();
 		return 0;
-	case WM_CONTEXTMENU:
-	{
-		// FIXME extract the coordinates from lParam
-		int x = LOWORD(lParam);
-		int y = HIWORD(lParam);
-		pInstance->onContextMenu(x, y);
-		return 0;
-	}
-	case WM_COMMAND:
-		if (!pInstance->onCommand(wParam, lParam)) {
-			return DefWindowProc(hWnd, message, wParam, lParam);
-		}
-		return 0;
+	// START KGU 2021-03-28/04-02: Enh. #6
 	case WM_SIZE:
 	{
 		// Resize status bar
 		// Get the Statusbar control handle which was previously stored in the 
 		// user data associated with the parent window.
 		SendMessage(pInstance->hStatusbar, WM_SIZE, 0, 0);
+		pInstance->pCanvas->resize();
 		return 0;
 	}
+	case WM_KEYDOWN:
+	{
+		SHORT shift = GetKeyState(VK_SHIFT);
+		UINT count = lParam & 0xff;
+		switch (wParam) {
+		case VK_ADD:
+		case VK_SUBTRACT:
+			pInstance->pCanvas->zoom(wParam == VK_ADD);
+			return 0;
+		case VK_LEFT:
+		case VK_RIGHT:
+			pInstance->pCanvas->scroll(true, wParam == VK_RIGHT, shift & 0x8000, count);
+			return 0;
+		case VK_UP:
+		case VK_DOWN:
+			pInstance->pCanvas->scroll(false, wParam == VK_DOWN, shift & 0x8000, count);
+			return 0;
+		}
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+	// END KGU 2021-03-28/04-02: Enh. #6
 	case WM_DESTROY:
 #if DEBUG_PRINT
 		printf("WM_DESTROY...\n");	// DEBUG
@@ -517,349 +444,41 @@ LRESULT CALLBACK Turtleizer::WndProc(HWND hWnd, UINT message,
 	}
 } // WndProc
 
-VOID Turtleizer::onPaint(HDC hdc)
-{
-	Graphics graphics(hdc);
-#if DEBUG_PRINT
-	printf("executing onPaint on window %x\n", this->hWnd);	// DEBUG
-#endif /*DEBUG_PRINT*/
+//VOID Turtleizer::onPaint(HDC hdc)
+//{
+//	Graphics graphics(hdc);
+//#if DEBUG_PRINT
+//	printf("executing onPaint on window %x\n", this->hWnd);	// DEBUG
+//#endif /*DEBUG_PRINT*/
+//
+//	// Draw the background FIXME do we really have to redraw all?
+//	graphics.Clear(this->backgroundColour);
+//
+//	// START KGU 2021-03-31: Enh. #6 Care for zooming, displacements and scroll viewport translation
+//	graphics.TranslateTransform(this->displacement.X, this->displacement.Y);
+//	graphics.ScaleTransform(this->zoomFactor, this->zoomFactor);
+//	graphics.TranslateTransform(-this->viewport.x, -this->viewport.y);
+//	// END KGU 2021-03-21
+//
+//	// Draw the recorded lines
+//	for (Turtles::const_iterator it(this->turtles.begin()); it != this->turtles.end(); ++it)
+//	{
+//		(*it)->draw(graphics);
+//	}
+//
+//	// START KGU 2021-03-31: Enh. #6 Draw the axes crossing if specified
+//	if (this->showAxes) {
+//		RectF bounds = this->getBounds();
+//		Pen pen(Color(0xcc,0xcc,0xff), 1/this->zoomFactor);
+//		REAL dashPattern[] = {4.0f/this->zoomFactor, 4.0f/this->zoomFactor};
+//		pen.SetDashPattern(dashPattern, 2);
+//		graphics.DrawLine(&pen, (int)bounds.X, 0, (int)(bounds.X + bounds.Width), 0);
+//		graphics.DrawLine(&pen, 0, (int)bounds.Y, 0, (int)(bounds.Y + bounds.Height));
+//	}
+//	// END KGU 2021-03-31
+//
+//}
 
-	// Draw the background FIXME do we really have to redraw all?
-	graphics.Clear(this->backgroundColour);
-
-	// Draw the recorded lines
-	for (Turtles::const_iterator it(this->turtles.begin()); it != this->turtles.end(); ++it)
-	{
-		(*it)->draw(graphics);
-	}
-
-	// START KGU 2021-03-28: Enh. #6 Status bar information
-	updateStatusbar();
-	// END KGU 2021-03-28
-}
-
-VOID Turtleizer::onContextMenu(int x, int y)
-{
-	if (this->hContextMenu == NULL) {
-		const int nMenuItems = sizeof(MENU_DEFINITIONS) / sizeof(MenuDef);
-		this->hContextMenu = CreatePopupMenu();
-		for (int i = 0; i < nMenuItems; i++) {
-			const MenuDef* def = &MENU_DEFINITIONS[i];
-			if (def->caption != NULL) {
-				int flags = MF_BYPOSITION | MF_STRING;
-				bool test = true;
-				if (def->method != nullptr) {
-					test = def->method(true);
-				}
-				if (def->isCheck && test) {
-					// It is a checkbox menu item
-					// TODO find out whether the status is on
-					flags |= MF_CHECKED;
-				}
-				else if (!def->isCheck && !test) {
-					flags |= MF_DISABLED;
-				}
-				AppendMenu(hContextMenu, flags, IDM_CONTEXT_MENU + i, def->caption);
-			}
-			else {
-				AppendMenu(hContextMenu, MF_BYPOSITION | MF_SEPARATOR, IDM_CONTEXT_MENU + i, NULL);
-			}
-		}
-	}
-	else {
-		updateContextMenu();
-	}
-	RECT rc;			// client area of window 
-	POINT pt = {x, y};	// location of mouse click 
-
-	// Get the bounding rectangle of the client area. 
-	GetClientRect(this->hWnd, &rc);
-
-	// Convert the mouse position to client coordinates. 
-	ScreenToClient(this->hWnd, &pt);
-
-	// If the position is in the client area, display a  
-	// shortcut menu. 
-	if (PtInRect(&rc, pt))
-	{
-		ClientToScreen(this->hWnd, &pt);
-		SetForegroundWindow(hWnd);
-		TrackPopupMenu(this->hContextMenu,
-			TPM_TOPALIGN | TPM_LEFTALIGN | TPM_RIGHTBUTTON,
-			pt.x, pt.y, 0,
-			hWnd, NULL);
-	}
-}
-
-BOOL Turtleizer::onCommand(WPARAM wParam, LPARAM lParam)
-{
-	BOOL done = FALSE;
-#if DEBUG_PRINT
-	printf("On Command high %d low %d\n", HIWORD(wParam), LOWORD(wParam));
-#endif /*DEBUG_PRINT*/
-	const int nMeuItems = sizeof(MENU_DEFINITIONS) / sizeof(MenuDef);
-	UINT code = LOWORD(wParam);
-	if (code >= IDM_CONTEXT_MENU && code < IDM_CONTEXT_MENU + nMeuItems) {
-		const MenuDef* pDef = &MENU_DEFINITIONS[code - IDM_CONTEXT_MENU];
-		if (pDef->method != nullptr) {
-			done = (pDef->method)(false);
-		}
-	}
-	return done;
-}
-
-BOOL Turtleizer::handleGotoCoord(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleGotoCoord\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO: Open an dialog to ask for the coordinates
-	return TRUE;
-}
-
-BOOL Turtleizer::handleGotoTurtle(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleGotoTurtle\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO: Scroll to turtle
-	return TRUE;
-}
-
-BOOL Turtleizer::handleGotoHome(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleGotoHome\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO scroll to home
-	return TRUE;
-}
-
-BOOL Turtleizer::handleGotoOrigin(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleGotoOrigin\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO
-	return TRUE;
-}
-
-BOOL Turtleizer::handleZoom100(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleZoom100\n");
-#endif /*DEBUG_PRINT*/
-	BOOL canDo = pInstance->zoomFactor != 1.0f;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO Care for current position 
-	pInstance->zoomFactor = 1.0f;
-	pInstance->updateWindow(pInstance->autoUpdate);
-	return TRUE;
-}
-
-BOOL Turtleizer::handleZoomBounds(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleZoomBounds\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO
-	return TRUE;
-}
-
-BOOL Turtleizer::handleShowAll(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleShowAll\n");
-#endif /*DEBUG_PRINT*/
-	RectF bounds = pInstance->getBounds();
-	BOOL canDo = bounds.X + pInstance->displacement.X < 0
-		|| bounds.Y + pInstance->displacement.Y < 0;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	pInstance->displacement = PointF(max(-bounds.X, 0), max(-bounds.Y, 0));
-	pInstance->updateWindow(pInstance->autoUpdate);
-	return TRUE;
-}
-
-BOOL Turtleizer::handleToggleAxes(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleToggleAxes\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL isToCheck = pInstance->showAxes;
-	if (testOnly) {
-		return isToCheck;
-	}
-	pInstance->showAxes = !isToCheck;
-	pInstance->updateWindow(pInstance->autoUpdate);
-	return TRUE;
-}
-
-BOOL Turtleizer::handleToggleTurtle(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleToggleTurtle\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL isToCheck = pInstance->turtles.front()->isTurtleShown();
-	if (testOnly) {
-		return isToCheck;
-	}
-	pInstance->showTurtle(!isToCheck);
-	return TRUE;
-}
-
-BOOL Turtleizer::handleSetBackground(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleSetBackground\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO
-	return TRUE;
-}
-
-BOOL Turtleizer::handleToggleCoords(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleToggleCoords\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL isToCheck = pInstance->popupCoords;
-	if (testOnly) {
-		return isToCheck;
-	}
-	pInstance->popupCoords = !isToCheck;
-	return TRUE;
-}
-
-BOOL Turtleizer::handleToggleStatus(bool testOnly)
-{
-	//printf("handleToggleStatus\n");
-	BOOL isToCheck = pInstance->showStatusbar;
-	if (testOnly) {
-		return isToCheck;
-	}
-	isToCheck = !isToCheck;
-	ShowWindow(pInstance->hStatusbar, isToCheck ? SW_SHOW : SW_HIDE);
-	pInstance->showStatusbar = isToCheck;
-	pInstance->updateStatusbar();
-	return TRUE;
-}
-
-BOOL Turtleizer::handleToggleSnap(bool testOnly)
-{
-	//printf("handleToggleSnap\n");
-	// TODO change this when the dialog is implemented
-	BOOL isToCheck = pInstance->snapLines;
-	if (testOnly) {
-		return isToCheck;
-	}
-	pInstance->snapLines = !isToCheck;
-	pInstance->updateStatusbar();
-	return TRUE;
-}
-
-BOOL Turtleizer::handleSetSnapRadius(bool testOnly)
-{
-	//printf("handleSnapRadius\n");
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO
-	return TRUE;
-}
-
-BOOL Turtleizer::handleToggleUpdate(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleToggleUpdate\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL isToCheck = pInstance->autoUpdate;
-	if (testOnly) {
-		return isToCheck;
-	}
-	pInstance->updateWindow(!isToCheck);
-	return TRUE;
-}
-
-BOOL Turtleizer::handleExportCSV(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleExportCSV\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO
-	return TRUE;
-}
-
-BOOL Turtleizer::handleExportPNG(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleExportPNG\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO
-	return TRUE;
-}
-
-BOOL Turtleizer::handleExportSVG(bool testOnly)
-{
-#if DEBUG_PRINT
-	printf("handleExportSVG\n");
-#endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO
-	return TRUE;
-}
 
 void Turtleizer::updateStatusbar()
 {
@@ -881,21 +500,19 @@ void Turtleizer::updateStatusbar()
 		RectF bounds = this->getBounds();
 		wsprintf(statusBuffer, L"%i x %i", (int)bounds.Width, (int)bounds.Height);
 		SendMessage(this->hStatusbar, SB_SETTEXT, 2, (LPARAM)statusBuffer);
-		// Get the bounding rectangle of the client area.
-		RECT rc;
-		GetClientRect(this->hWnd, &rc);
-		PointF offset = this->displacement;
+		// Get the scroll area bounds in turtle coords.
+		RECT rcScroll = this->pCanvas->getScrollRect();
 		wsprintf(statusBuffer, L"%d .. %d : %d .. %d",
-			-(int)offset.X, rc.right - rc.left - (int)offset.X, 
-			-(int)offset.Y,	rc.bottom - rc.top - (int)offset.Y);
+			rcScroll.left, rcScroll.right, rcScroll.top, rcScroll.bottom);
 		SendMessage(this->hStatusbar, SB_SETTEXT, 3, (LPARAM)statusBuffer);
+		float zoomFactor = this->pCanvas->getZoomFacor();
 		wsprintf(statusBuffer, L"%d.%d%%",
-			(int)(this->zoomFactor * 100),
-			((int)(this->zoomFactor * 1000)) % 10);
+			(int)(zoomFactor * 100),
+			((int)(zoomFactor * 1000)) % 10);
 		SendMessage(this->hStatusbar, SB_SETTEXT, 4, (LPARAM)statusBuffer);
 		bool hasSnapModeIcon = SendMessage(this->hStatusbar, SB_GETICON, 5, 0) != NULL;
 		if (!hasSnapModeIcon) {
-			wsprintf(statusBuffer, this->snapLines ? L"+ → /" : L"+ → ▪");
+			wsprintf(statusBuffer, this->pCanvas->snapsToLines() ? L"+ → /" : L"+ → ▪");
 			SendMessage(this->hStatusbar, SB_SETTEXT, 5, (LPARAM)statusBuffer);
 		}
 
@@ -936,27 +553,6 @@ void Turtleizer::updateStatusbar()
 
 }
 
-void Turtleizer::updateContextMenu()
-{
-	const int nMenuItems = sizeof(MENU_DEFINITIONS) / sizeof(MenuDef);
-	for (int i = 0; i < nMenuItems; i++) {
-		const MenuDef* pDef = &MENU_DEFINITIONS[i];
-		if (pDef->caption != NULL && pDef->method != nullptr) {
-			bool test = pDef->method(true);
-			if (pDef->isCheck) {
-				// In this case the test result decides about the checkbox
-				CheckMenuItem(this->hContextMenu, IDM_CONTEXT_MENU + i,
-					(test ? MF_CHECKED : MF_UNCHECKED));
-			}
-			else {
-				// Otherwise th test result decides about enaled or disabled mode
-				EnableMenuItem(this->hContextMenu, IDM_CONTEXT_MENU + i,
-					(test ? MF_ENABLED : MF_DISABLED));
-			}
-		}
-	}
-}
-
 RectF Turtleizer::getBounds() const
 {
 	RectF bounds;
@@ -982,14 +578,21 @@ DWORD WINAPI Turtleizer::interact(LPVOID lpParam)
 void Turtleizer::listen() {
 	while(GetMessage(&this->msg, NULL, 0, 0))
 	{
-		if (this->hAccel == NULL || !TranslateAccelerator(
-			this->hWnd,		// handle to receiving window 
-			this->hAccel,   // handle to active accelerator table 
-			&this->msg))    // message data 
+		if (!this->pCanvas->translateAccelerators(&this->msg))
 		{
 			TranslateMessage(&this->msg);
 			DispatchMessage(&this->msg);
 		}
+	}
+}
+
+void Turtleizer::getClientRect(RECT& rcClient) const
+{
+	GetClientRect(this->hWnd, &rcClient);
+	if (this->showStatusbar) {
+		RECT rcStatus;
+		GetWindowRect(this->hStatusbar, &rcStatus);
+		rcClient.bottom -= (rcStatus.bottom - rcStatus.top);
 	}
 }
 
@@ -1013,6 +616,7 @@ LPCWSTR Turtleizer::getAbsolutePath(LPCWSTR filename) const
 	wcscpy_s(&pFilePath[pathLen], buffLen - pathLen, filename);
 	return pFilePath;
 }
+
 // END KGU 2021-03-28
 
 // Immediately updates the Turtleizer window i.e. refreshes all damaged regions.
@@ -1021,8 +625,7 @@ LPCWSTR Turtleizer::getAbsolutePath(LPCWSTR filename) const
 // standard behaviour to update the window after every movement.
 void Turtleizer::updateWindow(bool automatic)
 {
-	this->autoUpdate = automatic;
-	UpdateWindow(this->hWnd);
+	this->pCanvas->redraw(automatic);
 }
 
 Turtleizer::Version::Version(unsigned short major, unsigned short minor, unsigned short bugfix)

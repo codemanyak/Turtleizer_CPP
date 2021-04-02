@@ -18,7 +18,8 @@
  *
  * History (add on top):
  * --------------------------------------------------------
- * 2021-03-29   VERSION 11.0.0: New methods isTurtleShown() and getBounds() for #6
+ * 2021-04-02   VERSION 11.0.0: New methods isTurtleShown() and getBounds() for #6,
+ *              signature of method refresh modified
  * 2018-07-30	VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29	new functions getX(), getY(), and getOrientation()
  * 2016-12-09	created

@@ -64,15 +64,23 @@
  *
  * The automatic update of the drawing area is initially done after each drawing step,
  * but will then be done ever less frequently with the growing number of elements (traces)
- * to be rendered. The proble is that to filter the elements by the damaged region does
- * hardly cost less efforts than to draw them rightaway.
+ * to be rendered. (To filter the elements by the damaged region does hardly cost less
+ * efforts than to draw them rightaway. It already helped a lot to invalidate only the
+ * affected region but was not sufficient.)
  * By invoking updateWindow(false) the regular update may be suppressed entirely. By
  * using updateWindow(true) you may re-enable the regular update.
- * BOTH call induce an immediate window update.
+ * BOTH calls induce an immediate window update.
+ * 
+ * Since version 11.0.0, the window has several GUI elements to allow zooming, scrolling,
+ * measuring and picture export. The functions are aailable via a context menu and accel-
+ * erator keys. A status bar is showing the main turtle's home and current position, the
+ * extensions of the reachable part of the drawing and the scroll range, as well the
+ * current zoom factor and the snap mode for measuring (either to lines or only to start
+ * and end points of lines).
  *
  * History (add at top):
  * --------------------------------------------------------
- * 2021-03-30   VERSION 11.0.0: GUI extensions according to #6
+ * 2021-04-02   VERSION 11.0.0: GUI extensions according to #6
  * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
  * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
  * 2018-10-09   New turtle symbol according to Structorizer versions >= 3.28
@@ -111,13 +119,14 @@ using std::list;
 // Setting this define to 1 enables some debug printf instructions
 #define DEBUG_PRINT 0
 #include "Turtle.h"
-
+#include "TurtleCanvas.h"
 
 // Singleton class providing a drawing window with a "turtle"
 // that may be moved around producing lines in its wake
 class Turtleizer
 {
 public:
+	friend class TurtleCanvas;
 	enum TurtleColour {
 		TC_BLACK, TC_RED, TC_YELLOW, TC_GREEN, TC_CYAN,
 		TC_LIGHTBLUE = TC_CYAN, TC_BLUE, TC_MAGENTA, TC_GREY, TC_ORANGE, TC_VIOLET
@@ -140,8 +149,6 @@ public:
 						 WPARAM wParam, LPARAM lParam);
 	static const unsigned int DEFAULT_WINDOWSIZE_X = 500;
 	static const unsigned int DEFAULT_WINDOWSIZE_Y = 500;
-	// Maximum and minimum zoom factor, zoom change factor
-	static const float MAX_ZOOM, MIN_ZOOM, ZOOM_RATE;
 	static const Version VERSION;
 	~Turtleizer(void);
 	// Initialises and starts a Turtleizer window
@@ -198,7 +205,7 @@ public:
 	// standard behaviour to update the window after every movement.
 	void updateWindow(bool automatic = true);
 	// Refresh the window (i. e. invalidate the region rect) 
-	void refresh(const RECT& rect, int nElements) const;
+	void refresh(const RectF& rect, int nElements) const;
 
 	// Creates and adds a new turtle symbolized by the the icon specifed by the given imagPath
 	// at the given position to the Turtleizer
@@ -207,13 +214,6 @@ public:
 private:
 	// Typename for the list of tracked line elements
 	typedef list<Turtle*> Turtles;
-	// Menudefinition structure
-	struct MenuDef {
-		LPCWSTR caption;
-		ACCEL accelerator;
-		BOOL (*method)(bool);
-		bool isCheck;
-	};
 #ifdef UNICODE
 	typedef LPCWSTR NameType;
 	typedef wstring String;
@@ -223,68 +223,39 @@ private:
 #endif /*UNICODE*/
 	static const NameType WCLASS_NAME;			// Name of the window class
 	static const Color colourTable[TC_VIOLET + 1];	// Look-up table for colour codes
-	static const int IDM_CONTEXT_MENU = 20000;	// Start identifier for context menu items
 	static const int IDS_STATUSBAR = 21000;		// Identifier for the status bar
 	static const int STATUSBAR_ICON_IDS[];		// Ids of status bar part icons (also specifying the part count)
-	static const MenuDef MENU_DEFINITIONS[];	// Context menu specification
 	static Turtleizer* pInstance;				// The singleton instance
 	ULONG_PTR gdiplusToken;						// Token of the GDI+ session
 	HWND hWnd;									// Window handle
 	// START KGU 2021-03-28: Enh. #6 GUI extensions
+	TurtleCanvas* pCanvas;						// Pointer to the drawing canvas object
 	int* statusbarPartWidths;					// Array of statusbar part text widths
 	HWND hStatusbar;							// Status bar handle
-	HMENU hContextMenu;							// Context menu handle
-	HACCEL hAccel;								// Handle of the accelerator table
-	float zoomFactor;							// current zoom factor (1.0f corresponds to 100%)
-	PointF displacement;						// Offset of the coordinate origin (never negative)
 	// END KGU 2021-03-28
 	MSG msg;									// Message instance for user interaction
 	WNDCLASS wndClass;							// Keeps the created window class
 	GdiplusStartupInput gdiplusStartupInput;	// Structure needed for GdiplusStartup
-	bool autoUpdate;						// Whether the window is to be updated on every movement
 	Turtles turtles;						// List of turtles to be handled here
 	Color backgroundColour;					// Current background colour
 	Point home0;							// Home position of the standard turtle
 	bool showStatusbar;						// Visibility of the statusbar
-	bool popupCoords;						// Whether coordinates are to be shown as popup
-	bool showAxes;							// Whether coordinate axes are to be drawn
-	bool snapLines;							// Snap mode (default: true)
-	float snapRadius;						// Snap radius
 	// Hidden constructor - use Turtleizer::startUp() to create an instance!
 	Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance = NULL);
 	// Callback method for refresh (OnPaint event)
 	VOID onPaint(HDC hdc);
 	// START KGU 2021-03-28: Enh. #6 GUI extensions
-	// Callback method for context menu event
-	VOID onContextMenu(int x, int y);
-	// General callback method for command handling
-	BOOL onCommand(WPARAM wParam, LPARAM lParam);
 	// Updates the information on the status bar
 	void updateStatusbar();
-	// Updates item visibility and checkboxes of the context menu
-	void updateContextMenu();
+	// Sets up several window decorations like statusbar, which might require pInstance to be set
+	void setupWindowAddons(HINSTANCE hInstance);
 	// Retrieves the combined bounds of all turtles
 	RectF getBounds() const;
-	// Menu / accelerator handlers
-	static BOOL handleGotoCoord(bool testOnly);
-	static BOOL handleGotoTurtle(bool testOnly);
-	static BOOL handleGotoHome(bool testOnly);
-	static BOOL handleGotoOrigin(bool testOnly);
-	static BOOL handleZoom100(bool testOnly);
-	static BOOL handleZoomBounds(bool testOnly);
-	static BOOL handleShowAll(bool testOnly);
-	static BOOL handleToggleAxes(bool testOnly);
-	static BOOL handleToggleTurtle(bool testOnly);
-	static BOOL handleSetBackground(bool testOnly);
-	static BOOL handleToggleCoords(bool testOnly);
-	static BOOL handleToggleStatus(bool testOnly);
-	static BOOL handleToggleSnap(bool testOnly);
-	static BOOL handleSetSnapRadius(bool testOnly);
-	static BOOL handleToggleUpdate(bool testOnly);
-	static BOOL handleExportCSV(bool testOnly);
-	static BOOL handleExportPNG(bool testOnly);
-	static BOOL handleExportSVG(bool testOnly);
 	// END KGU 2021-03-28
+	// START KGU 2021-03-31: Issue #6
+	// Specifies the effective client area (without statusbar etc.)
+	void getClientRect(RECT& rcClient) const;
+	// END KGU 2021-03-31
 	// Listener method (parallel thread) FIXME: better static?
 	void listen();
 	// Composes a file path from the path of this source file (project
