@@ -17,7 +17,7 @@
  *
  * History (add on top):
  * --------------------------------------------------------
- * 2021-04-02   Scrolling and zooming implemented
+ * 2021-04-02   Scrolling, zooming, and background choice implemented
  * 2021-03-29   Created for VERSION 11.0.0 (to address the scrollbar mechanism, #6)
  */
 
@@ -129,6 +129,12 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 		}
 	}
 	this->hAccel = CreateAcceleratorTable(accels, nAccels);
+
+	// Put some initial custom colours
+	int nCustColors = sizeof(customColors) / sizeof(COLORREF);
+	for (int i = 0; i < nCustColors; i++) {
+		customColors[i] = RGB(255, 255, 255);
+	}
 
 	// START KGU 2021-03-31: Issue #6
 	adjustScrollbars();
@@ -755,7 +761,6 @@ BOOL TurtleCanvas::handleToggleTurtle(bool testOnly)
 	printf("handleToggleTurtle\n");
 #endif /*DEBUG_PRINT*/
 	Turtleizer* pInstance = getInstance()->pFrame;
-	// TODO change this when the dialog is implemented
 	BOOL isToCheck = pInstance->turtles.front()->isTurtleShown();
 	if (testOnly) {
 		return isToCheck;
@@ -769,14 +774,27 @@ BOOL TurtleCanvas::handleSetBackground(bool testOnly)
 #if DEBUG_PRINT
 	printf("handleSetBackground\n");
 #endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
-	if (!canDo || testOnly) {
-		return canDo;
-	}
-	// TODO
 	TurtleCanvas* pInstance = getInstance();
-	pInstance->redraw(pInstance->autoUpdate);
+	if (testOnly) {
+		return TRUE;
+	}
+	
+	CHOOSECOLOR config;
+	config.lStructSize = sizeof(CHOOSECOLOR);
+	config.hwndOwner = pInstance->hCanvas;
+	config.hInstance = NULL;
+	config.rgbResult = pInstance->pFrame->backgroundColour.ToCOLORREF();
+	config.lpCustColors = pInstance->customColors;
+	config.Flags = CC_RGBINIT;
+
+	if (ChooseColor(&config)) {
+		pInstance->pFrame->setBackground(
+			GetRValue(config.rgbResult),
+			GetGValue(config.rgbResult),
+			GetBValue(config.rgbResult)
+		);
+		//pInstance->redraw(pInstance->autoUpdate);
+	}
 	return TRUE;
 }
 

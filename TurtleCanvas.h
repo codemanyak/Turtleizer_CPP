@@ -18,7 +18,7 @@
  *
  * History (add on top):
  * --------------------------------------------------------
- * 2021-04-02   Scrolling and zooming implemented
+ * 2021-04-02   Scrolling, zooming, and background choice implemented
  * 2021-03-31   created for VERSION 11.0.0 (to address the scrollbar mechanism, #6)
  */
 
@@ -82,6 +82,7 @@ private:
 	static const NameType WCLASS_NAME;			// Name of the window class
 	static const int IDM_CONTEXT_MENU = 20000;	// Start identifier for context menu items
 	static const MenuDef MENU_DEFINITIONS[];	// Context menu specification
+	COLORREF customColors[16];					// Cache for user background colours
 	HWND hCanvas;								// The handle of the canvas window (subwindow)
 	HWND hFrame;								// The handle of the frame window
 	Turtleizer* const pFrame;					// Reference to the owning Turtleizer
