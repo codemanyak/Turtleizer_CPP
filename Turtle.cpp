@@ -15,6 +15,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2021-04-03   VERSION 11.0.0: New method for SVG export
  * 2021-04-02   VERSION 11.0.0: Enh. #6 (tracking of the bounds and new internal methods)
  * 2019-07-08   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2, #3
  * 2018-10-23   VERSION 10.0.0: Casts added to avoid compiler warnings.
@@ -27,6 +28,7 @@
 #include <cmath>
 #include <cstring>
 #include <cassert>
+#include <iomanip>
 #include "Turtle.h"
 #include "Turtleizer.h"
 
@@ -320,6 +322,66 @@ void Turtle::draw(Graphics& gr) const
 		gr.SetTransform(&transf);
 		gr.Flush();
 		delete image;
+	}
+
+}
+
+boolean Turtle::hasElements() const
+{
+	return !this->elements.empty();
+}
+
+void Turtle::writeSVG(std::ostream& ostr, PointF offset, unsigned short scale) const
+{
+	/* In contrast to Structorizer TurtleBox, which exports the points
+	 * as int coordinate pairs, we export them with real-number coordinates.
+	 * The explanaing difference is that the line elements here have floating point
+	 * coordinates, whereas they are stored with integer start and end coordinates
+	 * in Structorizer. The point comparison for the forming of paths is the clue
+	 * why the picture degades if we just round the exported coordinates: As with
+	 * fresh drawing, the paths work with position differences, hence if consecutive
+	 * points are detected as equal they will form a path but the differences to
+	 * the next point may vanish by rounding such that rounding errors are rapidly
+	 * accumulating. If the lines themselves are already rounded then, mysteriously,
+	 * the paths will way more often be broken such that harmful difference chains
+	 * are less frequent.
+	 * Anyway, we are on the safer side here.
+	 */
+	PointF lastPt;
+	Color lastCol;
+	int nPoints = 0;
+	ostr.fill('0');
+	for (Elements::const_iterator it(this->elements.cbegin()); it != this->elements.cend(); ++it)
+	{
+			PointF from = it->getFrom();
+			PointF to = it->getTo();
+			Color col = it->getColor();
+			if (nPoints == 0 || !lastPt.Equals(from)
+				|| lastCol.GetValue() != col.GetValue()
+				|| nPoints >= MAX_POINTS_PER_SVG_PATH) {
+				if (nPoints > 0) {
+					// End the previous path
+					ostr << "\" />\n";
+				}
+				// Start a new path
+				ostr << "    <path\n";
+				ostr << "      style=\"stroke:#"
+					<< std::hex << std::setw(6)
+					<< (int)(col.GetValue() & 0xFFFFFF)
+					<< std::dec << "\"\n";
+				ostr << "      id=\"path" << std::setw(5) << nPoints << "\"\n";
+				ostr << "      d=\"m "
+					<< ((from.X + offset.X) * scale) << ","
+					<< ((from.Y + offset.Y) * scale) << " ";
+			}
+			ostr << ((to.X - from.X) * scale) << ","
+				<< ((to.Y - from.Y) * scale) << " ";
+			lastPt = to;
+			lastCol = col;
+			nPoints++;
+	}
+	if (nPoints > 0) {
+		ostr << "\" />\n";
 	}
 
 }

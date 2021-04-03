@@ -17,6 +17,7 @@
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2021-04-03   SVG export implemented
  * 2021-04-02   Scrolling, zooming, and background choice implemented
  * 2021-03-29   Created for VERSION 11.0.0 (to address the scrollbar mechanism, #6)
  */
@@ -25,6 +26,8 @@
 #define WIDEN2(x) L ## x
 #define WIDEN(x) WIDEN2(x)
 #define __WFILE__ WIDEN(__FILE__)
+
+#include <fstream>
 
 const TurtleCanvas::NameType TurtleCanvas::WCLASS_NAME = TEXT("TurtleCanvas");
 
@@ -48,30 +51,30 @@ const float TurtleCanvas::ZOOM_RATE = 0.9f;
  * (it may have confused the accelerator map generator).
  */
 const TurtleCanvas::MenuDef TurtleCanvas::MENU_DEFINITIONS[] = {
-	{L"Scroll to coordinate ...\tG", {FVIRTKEY, LOBYTE(VkKeyScanA('G'))}, TurtleCanvas::handleGotoCoord, false},
-	{L"Scroll to turtle positon\tEnd", {FVIRTKEY, VK_END}, TurtleCanvas::handleGotoTurtle, false},
-	{L"Scroll to home position\tPos1", {FVIRTKEY, VK_HOME}, TurtleCanvas::handleGotoHome, false},
-	{L"Scroll to origin (0,0)\t0", {0, '0'}, TurtleCanvas::handleGotoOrigin, false},
+	{TEXT("Scroll to coordinate ...\tG"), {FVIRTKEY, LOBYTE(VkKeyScanA('G'))}, TurtleCanvas::handleGotoCoord, false},
+	{TEXT("Scroll to turtle positon\tEnd"), {FVIRTKEY, VK_END}, TurtleCanvas::handleGotoTurtle, false},
+	{TEXT("Scroll to home position\tPos1"), {FVIRTKEY, VK_HOME}, TurtleCanvas::handleGotoHome, false},
+	{TEXT("Scroll to origin (0,0)\t0"), {0, '0'}, TurtleCanvas::handleGotoOrigin, false},
 	{NULL, {}, nullptr, false},
-	{L"Reset zoom to 100%\t1", {0, '1'}, TurtleCanvas::handleZoom100, false},
-	{L"Zoom to the bounds\tZ", {FVIRTKEY, LOBYTE(VkKeyScanA('Z'))}, TurtleCanvas::handleZoomBounds, false},
+	{TEXT("Reset zoom to 100%\t1"), {0, '1'}, TurtleCanvas::handleZoom100, false},
+	{TEXT("Zoom to the bounds\tZ"), {FVIRTKEY, LOBYTE(VkKeyScanA('Z'))}, TurtleCanvas::handleZoomBounds, false},
 	{NULL, {}, nullptr, false},
-	{L"Make all drawing visible\tA",{FVIRTKEY, LOBYTE(VkKeyScanA('A'))}, TurtleCanvas::handleShowAll, false},
-	{L"Show axes of coordinates\tO", {FVIRTKEY, LOBYTE(VkKeyScanA('O'))}, TurtleCanvas::handleToggleAxes, true},
+	{TEXT("Make all drawing visible\tA"),{FVIRTKEY, LOBYTE(VkKeyScanA('A'))}, TurtleCanvas::handleShowAll, false},
+	{TEXT("Show axes of coordinates\tO"), {FVIRTKEY, LOBYTE(VkKeyScanA('O'))}, TurtleCanvas::handleToggleAxes, true},
 	{NULL, {}, nullptr, false},
-	{L"Show turtle\tT", {FVIRTKEY, LOBYTE(VkKeyScanA('T'))}, TurtleCanvas::handleToggleTurtle, true},
-	{L"Set background colour ...\tB", {FVIRTKEY, LOBYTE(VkKeyScanA('B'))}, TurtleCanvas::handleSetBackground, false},
+	{TEXT("Show turtle\tT"), {FVIRTKEY, LOBYTE(VkKeyScanA('T'))}, TurtleCanvas::handleToggleTurtle, true},
+	{TEXT("Set background colour ...\tB"), {FVIRTKEY, LOBYTE(VkKeyScanA('B'))}, TurtleCanvas::handleSetBackground, false},
 	{NULL, {}, nullptr, false},
-	{L"Show statusbar\tS", {FVIRTKEY, LOBYTE(VkKeyScanA('S'))}, TurtleCanvas::handleToggleStatus, true},
-	{L"Pop up coordinates\tC", {FVIRTKEY, LOBYTE(VkKeyScanA('C'))}, TurtleCanvas::handleToggleCoords, true},
-	{L"Snap lines (else: points only)\tL", {FVIRTKEY, LOBYTE(VkKeyScanA('L'))}, TurtleCanvas::handleToggleSnap, true},
-	{L"Set measuring snap radius ...\tR", {FVIRTKEY, LOBYTE(VkKeyScanA('R'))}, TurtleCanvas::handleSetSnapRadius, false},
+	{TEXT("Show statusbar\tS"), {FVIRTKEY, LOBYTE(VkKeyScanA('S'))}, TurtleCanvas::handleToggleStatus, true},
+	{TEXT("Pop up coordinates\tC"), {FVIRTKEY, LOBYTE(VkKeyScanA('C'))}, TurtleCanvas::handleToggleCoords, true},
+	{TEXT("Snap lines (else: points only)\tL"), {FVIRTKEY, LOBYTE(VkKeyScanA('L'))}, TurtleCanvas::handleToggleSnap, true},
+	{TEXT("Set measuring snap radius ...\tR"), {FVIRTKEY, LOBYTE(VkKeyScanA('R'))}, TurtleCanvas::handleSetSnapRadius, false},
 	{NULL, {}, nullptr, false},
-	{L"Update on every turtle action\tU", {FVIRTKEY, LOBYTE(VkKeyScanA('U'))}, TurtleCanvas::handleToggleUpdate, true},
+	{TEXT("Update on every turtle action\tU"), {FVIRTKEY, LOBYTE(VkKeyScanA('U'))}, TurtleCanvas::handleToggleUpdate, true},
 	{NULL, {}, nullptr, false},
-	{L"Export drawing items as CSV ...\tX", {FVIRTKEY, LOBYTE(VkKeyScanA('X'))}, TurtleCanvas::handleExportCSV, false},
-	{L"Export drawing as PNG ...\tCtrl+S", {FCONTROL | FVIRTKEY, LOBYTE(VkKeyScanA('S'))}, TurtleCanvas::handleExportPNG, false},
-	{L"Export drawing as SVG ...\tV", {FVIRTKEY, LOBYTE(VkKeyScanA('V'))}, TurtleCanvas::handleExportSVG, false}
+	{TEXT("Export drawing items as CSV ...\tX"), {FVIRTKEY, LOBYTE(VkKeyScanA('X'))}, TurtleCanvas::handleExportCSV, false},
+	{TEXT("Export drawing as PNG ...\tCtrl+S"), {FCONTROL | FVIRTKEY, LOBYTE(VkKeyScanA('S'))}, TurtleCanvas::handleExportPNG, false},
+	{TEXT("Export drawing as SVG ...\tV"), {FVIRTKEY, LOBYTE(VkKeyScanA('V'))}, TurtleCanvas::handleExportSVG, false}
 };
 // END KGU 2021-03-28
 
@@ -863,7 +866,6 @@ BOOL TurtleCanvas::handleToggleUpdate(bool testOnly)
 	printf("handleToggleUpdate\n");
 #endif /*DEBUG_PRINT*/
 	TurtleCanvas* pInstance = getInstance();
-	// TODO change this when the dialog is implemented
 	BOOL isToCheck = pInstance->autoUpdate;
 	if (testOnly) {
 		return isToCheck;
@@ -905,13 +907,104 @@ BOOL TurtleCanvas::handleExportSVG(bool testOnly)
 #if DEBUG_PRINT
 	printf("handleExportSVG\n");
 #endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
 	BOOL canDo = FALSE;
+	TurtleCanvas* pInstance = getInstance();
+	for (Turtle* pTurtle : pInstance->pFrame->turtles) {
+		if (pTurtle->hasElements()) {
+			canDo = TRUE;
+			break;
+		}
+	}
 	if (!canDo || testOnly) {
 		return canDo;
 	}
-	// TODO
+	TCHAR szFile[_MAX_PATH] = { 0 };       // The buffer for the file path
+	RectF bounds = pInstance->pFrame->getBounds();
+	String fName = pInstance->chooseFileName(TEXT("All files\0*.*\0SVG files\0*.SVG\0"),
+		TEXT("svg"), szFile);
+	if (!fName.empty()) {
+		// TODO get the scale via the saveFile dialog...
+		unsigned short scale = 1;
+		RectF bounds = pInstance->pFrame->getBounds();
+		PointF offset(-bounds.X, -bounds.Y);
+		std::ofstream ostr(szFile);
+		if (ostr.is_open()) {
+			ostr << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n";
+			ostr << "<!-- Created with Turtleizer_CPP"
+				<< " (https://github.com/codemanyak/Turtleizer_CPP) -->\n";
+			ostr << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""
+				<< (long)ceil(bounds.Width * scale) << "\" height=\""
+				<< (long)ceil(bounds.Height * scale) << "\">\n";
+			ostr << "  <title>" << fName << "</title>\n";
+
+			/* Draw the background:
+			 * The fill colour must not be given as hex code, otherwise the rectangle
+			 * will always be black! */
+			Color bg = pInstance->pFrame->backgroundColour;
+			ostr << "    <rect style=\"fill:rgb("
+				<< (int)bg.GetRed() << "," << (int)bg.GetGreen() << "," << (int)bg.GetBlue()
+				<< ");fill-opacity:1\" ";
+			ostr << " x=\"0\" y=\"0\" width=\"" << (long)ceil(bounds.Width * scale)
+				<< "\" height=\"" << (long)ceil(bounds.Height * scale) << "\" ";
+			ostr << "id=\"background\"/>\n";
+
+			// Now export the elements
+			ostr << "  <g id=\"elements\" style=\"fill:none;stroke-width:"
+				<< scale << + "px;stroke-opacity:1:stroke-linejoin:miter\">\n";
+
+			for (Turtle* pTurtle : pInstance->pFrame->turtles) {
+				pTurtle->writeSVG(ostr, offset, scale);
+			}
+
+			ostr << "  </g>\n";
+			ostr << "</svg>\n";
+		}
+		else {
+			MessageBox(
+				pInstance->hFrame,
+				TEXT("File could not be opened."),
+				TEXT("Export failed"),
+				MB_ICONERROR | MB_OK
+			);
+		}
+	}
+	else {
+		MessageBox(
+			pInstance->hFrame,
+			TEXT("No SVG export was done."),
+			TEXT("Export canceled"),
+			MB_ICONERROR | MB_OK
+		);
+
+	}
 	return TRUE;
+}
+
+TurtleCanvas::String TurtleCanvas::chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName)
+{
+	OPENFILENAME ofn;       // common dialog box structure
+
+	// Initialize OPENFILENAME
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = getInstance()->hCanvas;
+	ofn.lpstrFile = fileName;
+	ofn.nMaxFile = _MAX_PATH;
+	ofn.lpstrFilter = filters;
+	ofn.nFilterIndex = 2;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.lpstrDefExt = defaultExt;
+	ofn.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT;
+
+	String pureName;
+	if (GetSaveFileName(&ofn) == TRUE) {
+		pureName = String(ofn.lpstrFile + ofn.nFileOffset);
+		size_t posDot = pureName.rfind('.');
+		pureName = pureName.substr(0, posDot);
+	}
+	return pureName;
 }
 
 void TurtleCanvas::updateContextMenu()

@@ -72,7 +72,7 @@ private:
 #endif /*UNICODE*/
 	// Menudefinition structure
 	struct MenuDef {
-		LPCWSTR caption;
+		LPTSTR caption;
 		ACCEL accelerator;
 		BOOL(*method)(bool);
 		bool isCheck;
@@ -104,6 +104,10 @@ private:
 	void adjustScrollbars();
 	// Updates item visibility and checkboxes of the context menu
 	void updateContextMenu();
+	// Asks for a file name of the given types, writes the result path into filename
+	//    and returns the pure file name as string if successful, otherwise (i.e. if
+	//    the user cancels or it simply fails) returns an empty string
+	String chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName);
 	// Callback method for refresh (OnPaint event)
 	VOID onPaint(HDC hdc);
 	// Callback method for context menu event

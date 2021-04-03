@@ -18,6 +18,7 @@
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2021-04-03   VERSION 11.0.0: New method for SVG export
  * 2021-04-02   VERSION 11.0.0: New methods isTurtleShown() and getBounds() for #6,
  *              signature of method refresh modified
  * 2018-07-30	VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
@@ -28,6 +29,7 @@
 #include <Windows.h>
 #include <gdiplus.h>
 #include <list>
+#include <ostream>
 using namespace Gdiplus;
 using std::list;
 
@@ -41,6 +43,9 @@ public:
 	public:
 		friend class Turtle;
 		void draw(Graphics& gr) const;
+		inline PointF getFrom() const { return PointF(x1, y1); }
+		inline PointF getTo() const { return PointF(x2, y2); }
+		inline Color getColor() const { return col; }
 	private:
 		TurtleLine(REAL x1, REAL y1, REAL x2, REAL y2, Color col);
 		REAL x1, y1;	// from position
@@ -88,23 +93,30 @@ public:
 	// Wipes all drawn content of this turtle
 	void clear();
 
-	// Draws this turtle and its trayectory in 2D graphics gr
-	void draw(Graphics& gr) const;
-
 	// Returns the current horizontal pixel position in floating-point resolution
 	double getX() const;
 	// Returns the current vertical pixel position in floating-point resolution
 	double getY() const;
 	// Returns the current orientation in degrees from North (clockwise = positive)
 	double getOrientation() const;
+
 	// Returns true if the turtle visibiity is on
 	bool isTurtleShown() const;
 	// Returns the current drawing bounds of this turtle
 	RectF getBounds() const;
+
+	// Draws this turtle and its trayectory in 2D graphics gr
+	void draw(Graphics& gr) const;
+	// Reports whether this turtle has drawn elements
+	boolean hasElements() const;
+	// Writes SVG descriptions of the elements to the given stream
+	void writeSVG(std::ostream& ostr, PointF offset, unsigned short scale = 1) const;
+
 protected:
 	// Type name for the list of tracked line elements
 	typedef list<TurtleLine> Elements;
 private:
+	static const int MAX_POINTS_PER_SVG_PATH = 800;
 	static const LPCWSTR TURTLE_IMAGE_FILE;		// File name of the turtle image
 	const Turtleizer* pTurtleizer;				// The singleton Turtleizer instance
 	LPCWSTR	turtleImagePath;					// The derived turtle file path
