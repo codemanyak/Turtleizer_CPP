@@ -11,11 +11,11 @@
  *
  * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
- * Version: 11.0.0 (covering capabilities of Structorizer 3.30-12, functional GUI)
+ * Version: 11.0.0 (covering capabilities of Structorizer 3.31, functional GUI)
  *
  * History (add at top):
  * --------------------------------------------------------
- * 2021-04-03   VERSION 11.0.0: New method for SVG export
+ * 2021-04-05   VERSION 11.0.0: New method for SVG export, nearest point search
  * 2021-04-02   VERSION 11.0.0: Enh. #6 (tracking of the bounds and new internal methods)
  * 2019-07-08   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2, #3
  * 2018-10-23   VERSION 10.0.0: Casts added to avoid compiler warnings.
@@ -277,6 +277,25 @@ LPCWSTR Turtle::makeFilePath(LPCWSTR filename, bool addProductPath) const
 	return pFilePath;
 }
 
+REAL Turtle::getNearestPoint(const PointF& coord, bool betweenEnds, double radius, PointF& nearest) const
+{
+	REAL minDist = -1.0;
+	for (Elements::const_iterator it(this->elements.cbegin()); it != this->elements.cend(); ++it)
+	{
+		PointF cand;
+		REAL dist = it->getNearestPoint(coord, betweenEnds, cand);
+		if (dist == 0.0) {
+			nearest = cand;
+			return dist;
+		}
+		else if (dist < radius && (minDist < 0 || dist < minDist)) {
+			nearest = cand;
+			minDist = dist;
+		}
+	}
+	return minDist;
+}
+
 void Turtle::draw(Graphics& gr) const
 {
 	for (Elements::const_iterator it(this->elements.cbegin()); it != this->elements.cend(); ++it)
@@ -335,17 +354,16 @@ void Turtle::writeSVG(std::ostream& ostr, PointF offset, unsigned short scale) c
 {
 	/* In contrast to Structorizer TurtleBox, which exports the points
 	 * as int coordinate pairs, we export them with real-number coordinates.
-	 * The explanaing difference is that the line elements here have floating point
-	 * coordinates, whereas they are stored with integer start and end coordinates
-	 * in Structorizer. The point comparison for the forming of paths is the clue
-	 * why the picture degades if we just round the exported coordinates: As with
-	 * fresh drawing, the paths work with position differences, hence if consecutive
-	 * points are detected as equal they will form a path but the differences to
-	 * the next point may vanish by rounding such that rounding errors are rapidly
-	 * accumulating. If the lines themselves are already rounded then, mysteriously,
-	 * the paths will way more often be broken such that harmful difference chains
-	 * are less frequent.
-	 * Anyway, we are on the safer side here.
+	 * The reason is that the line elements here have floating point
+	 * coordinates, whereas they used to be stored with integer start and end
+	 * coordinates in Structorizer.
+	 * SVG paths are defined incrementally, i.e. via coordinate differences,
+	 * so rounding the differences would definitely compromise the drawing.
+	 * What we could do is to round the coordinates before computing the differences
+	 * but then we should also round the points before detecting gaps in the paths.
+	 * (In the event this is what Structorizer does, to some success.
+	 * Anyway, we are on the safer side here, paths can get longer and surprisingly
+	 * do get longer than on export from Structorizer's TurtleBox.
 	 */
 	PointF lastPt;
 	Color lastCol;
@@ -393,6 +411,51 @@ Turtle::TurtleLine::TurtleLine(REAL x1, REAL y1, REAL x2, REAL y2, Color col)
 , y2(y2)
 , col(col)
 {
+}
+
+REAL Turtle::TurtleLine::getNearestPoint(const PointF& pt, bool betweenEnds, PointF& nearest) const
+{
+	if (betweenEnds) {
+		// We abuse a point for the direction vector
+		PointF dvec(x2 - x1, y2 - y1);
+		PointF pvec(pt.X - x1, pt.X - y1);
+		double dlen2 = (dvec.X * dvec.X + dvec.Y * dvec.Y);
+		double param = (pvec.X * dvec.X + pvec.Y * dvec.Y) / dlen2;
+		if (param < 0) {
+			nearest.X = x1;
+			nearest.Y = y1;
+		}
+		else if (param * param > dlen2) {
+			nearest.X = x2;
+			nearest.Y = y2;
+		}
+		else {
+			nearest.X = x1 + param * dvec.X;
+			nearest.Y = y1 + param * dvec.Y;
+		}
+		double distX = nearest.X - pt.X;
+		double distY = nearest.Y - pt.Y;
+		return (REAL)sqrt(distX * distX + distY * distY);
+	}
+	else {
+		double distX = x1 - pt.X;
+		double distY = y1 - pt.Y;
+		REAL dist1 = (REAL)sqrt(distX * distX + distY * distY);
+		distX = x2 - pt.X;
+		distY = y2 - pt.Y;
+		REAL dist2 = (REAL)sqrt(distX * distX + distY * distY);
+		if (dist2 > dist1) {
+			nearest.X = x1;
+			nearest.Y = y1;
+			return dist1;
+		}
+		else {
+			nearest.X = x2;
+			nearest.Y = y2;
+			return dist2;
+		}
+	}
+	return 0;	// Not reachable
 }
 
 void Turtle::TurtleLine::draw(Gdiplus::Graphics& gr) const

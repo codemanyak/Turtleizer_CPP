@@ -14,13 +14,13 @@
  *
  * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
- * Version: 11.0.0 (covering capabilities of Structorizer 3.30-12, functional GUI)
+ * Version: 11.0.0 (covering capabilities of Structorizer 3.31, functional GUI)
  *
  * History (add on top):
  * --------------------------------------------------------
- * 2021-04-03   VERSION 11.0.0: New method for SVG export
- * 2021-04-02   VERSION 11.0.0: New methods isTurtleShown() and getBounds() for #6,
- *              signature of method refresh modified
+ * 2021-04-05	VERSION 11.0.0: New method for SVG export, nearest point search
+ * 2021-04-02	VERSION 11.0.0: New methods isTurtleShown() and getBounds() for #6,
+ *				signature of method refresh modified
  * 2018-07-30	VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
  * 2017-10-29	new functions getX(), getY(), and getOrientation()
  * 2016-12-09	created
@@ -51,6 +51,10 @@ public:
 		REAL x1, y1;	// from position
 		REAL x2, y2;	// to position
 		Color col;		// colour to draw with
+		/* Identifies the nearest end point or point on line to the given
+		 * coordinate pt, returns its distance or -1 and puts its coordinates into
+		 * point nearest. */
+		REAL getNearestPoint(const PointF& pt, bool betweenEnds, PointF& nearest) const;
 	};
 
 	Turtle(int x, int y, LPCWSTR imagePath = NULL);
@@ -104,6 +108,11 @@ public:
 	bool isTurtleShown() const;
 	// Returns the current drawing bounds of this turtle
 	RectF getBounds() const;
+	/* Searches the nearest end point or point on line within the given radius to
+	 * given coordinate, returns its distance or -1 and puts its coordinates into
+	 * point nearest (if such a point was found). (The result may be ambiguous.)
+	 */
+	REAL getNearestPoint(const PointF& coord, bool betweenEnds, double radius, PointF& nearest) const;
 
 	// Draws this turtle and its trayectory in 2D graphics gr
 	void draw(Graphics& gr) const;

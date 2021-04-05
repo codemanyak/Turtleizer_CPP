@@ -17,7 +17,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
- * 2021-04-02   VERSION 11.0.0: Additions for #6 (GUI functionality added)
+ * 2021-04-05   VERSION 11.0.0: Additions for #6 (GUI functionality ~ Structorizer 3.31 added)
  * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
  * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
  * 2018-07-30   VERSION 9: API adaptation to Structorizer 3.28-07: clear() procedure
@@ -106,6 +106,7 @@ Turtleizer::Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, H
 		hInstance = get_hInstance();
 	}
 
+	WNDCLASS wndClass = { 0 };
 	wndClass.style          = CS_HREDRAW | CS_VREDRAW;
 	wndClass.lpfnWndProc    = Turtleizer::WndProc;
 	wndClass.cbClsExtra     = 0;
@@ -553,6 +554,29 @@ void Turtleizer::updateStatusbar()
 
 }
 
+bool Turtleizer::snapToNearestPoint(PointF& coord, bool onLines, REAL radius) const
+{
+	REAL minDist = INFINITY;
+	PointF nearest;
+	for (Turtle *pTurtle : turtles) {
+		PointF nearPt;
+		REAL dist = pTurtle->getNearestPoint(coord, onLines, radius, nearPt);
+		if (dist == 0) {
+			coord = nearPt;
+			return true;
+		}
+		else if (dist > 0 && dist < minDist) {
+			nearest = nearPt;
+			minDist = dist;
+		}
+	}
+	if (minDist < INFINITY) {
+		coord = nearest;
+		return true;
+	}
+	return false;
+}
+
 RectF Turtleizer::getBounds() const
 {
 	RectF bounds;
@@ -607,8 +631,7 @@ LPCWSTR Turtleizer::getAbsolutePath(LPCWSTR filename) const
 		pPosSlash = pPosBSlash;
 		delimiter = L'\\';
 	}
-	size_t pathLen = 0;
-	pathLen = (pPosSlash != nullptr) ? pPosSlash - pMyPath : wcslen(pMyPath);
+	size_t pathLen = (pPosSlash != nullptr) ? pPosSlash - pMyPath : wcslen(pMyPath);
 	size_t buffLen = pathLen + wcslen(filename) + 2;
 	WCHAR* pFilePath = new WCHAR[buffLen];
 	wcsncpy_s(pFilePath, buffLen, pMyPath, pathLen);

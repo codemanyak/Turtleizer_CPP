@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include "TurtleCanvas.h"
 #include "Turtleizer.h"
 /*
@@ -17,6 +18,7 @@
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2021-04-05   Measuring tooltip implemented.
  * 2021-04-03   SVG export implemented
  * 2021-04-02   Scrolling, zooming, and background choice implemented
  * 2021-03-29   Created for VERSION 11.0.0 (to address the scrollbar mechanism, #6)
@@ -27,7 +29,9 @@
 #define WIDEN(x) WIDEN2(x)
 #define __WFILE__ WIDEN(__FILE__)
 
+#include <cmath>
 #include <fstream>
+#include <windowsx.h>
 
 const TurtleCanvas::NameType TurtleCanvas::WCLASS_NAME = TEXT("TurtleCanvas");
 
@@ -82,7 +86,11 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 	: pFrame(&frame)
 	, hFrame(hFrame)
 	, hContextMenu(NULL)
+	, hTooltip(NULL)
 	, hAccel(NULL)
+	, hArrow(NULL)
+	, hCross(NULL)
+	, tooltipInfo{ 0 }
 	, snapLines(true) 
 	, snapRadius(5.0f)
 	, popupCoords(true)
@@ -90,14 +98,21 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 	, zoomFactor(1.0)
 	, autoUpdate(true)
 	, scrollPos{0, 0}
+	, pDragStart(NULL)
+	, mouseCoord(0, 0)
+	, tracksMouse(false)
 {
+	this->hArrow = LoadCursor(NULL, IDC_ARROW);
+	this->hCross = LoadCursor(NULL, IDC_CROSS);
+
+	WNDCLASS wndClass = { 0 };
 	wndClass.style = CS_HREDRAW | CS_VREDRAW;
 	wndClass.lpfnWndProc = TurtleCanvas::CanvasWndProc;
 	wndClass.cbClsExtra = 0;
 	wndClass.cbWndExtra = 0;
 	wndClass.hInstance = hInstance;
 	wndClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wndClass.hCursor = NULL;	// The cursor is handled explicitly
 	wndClass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	wndClass.lpszMenuName = NULL;
 	wndClass.lpszClassName = WCLASS_NAME;
@@ -139,6 +154,29 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 		customColors[i] = RGB(255, 255, 255);
 	}
 
+	// Create a tooltip - FIXME does not work, i.e. will never e shown!
+	// A tooltip control should not have the WS_CHILD style, nor should it 
+	// have an id, otherwise its behavior will be adversely affected.
+	this->hTooltip = CreateWindowEx(0/*WS_EX_TOPMOST*/, TOOLTIPS_CLASS, NULL,
+		TTS_NOPREFIX | TTS_ALWAYSTIP,
+		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+		this->hCanvas, NULL, this->hInstance, NULL);
+
+	// Associate the tooltip with the measuring window
+	this->tooltipInfo.cbSize = sizeof(TOOLINFO);
+	this->tooltipInfo.uFlags = TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE;
+	this->tooltipInfo.hwnd = this->hCanvas;
+	this->tooltipInfo.uId = (UINT_PTR)this->hCanvas;
+	this->tooltipInfo.lpszText = TEXT("(0, 0)");
+	this->tooltipInfo.hinst = this->hInstance;
+
+	//GetClientRect(this->hCanvas, &this->tooltipInfo.rect);	// FIXME this sensible?
+
+	//SetWindowPos(hTooltip, HWND_TOPMOST, 0, 0, 0, 0,
+	//	SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+	LRESULT res = SendMessage(hTooltip, TTM_ADDTOOL, 0, (LPARAM)&this->tooltipInfo);
+	printf("Result of TTM_ADDTOOL: %c\n", (BOOL)res ? 'T' : 'F');
+
 	// START KGU 2021-03-31: Issue #6
 	adjustScrollbars();
 	// END KGU 2021-03-21
@@ -164,51 +202,57 @@ LRESULT TurtleCanvas::CanvasWndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		pInstance->onPaint(hdc);	// instance-specific refresh
 		EndPaint(hWnd, &ps);
 		pInstance->adjustScrollbars();
-		return 0;
+		return FALSE;
 	case WM_CONTEXTMENU:
 	{
 		// FIXME extract the coordinates from lParam
 		int x = LOWORD(lParam);
 		int y = HIWORD(lParam);
 		pInstance->onContextMenu(x, y);
-		return 0;
+		return FALSE;
 	}
 	case WM_HSCROLL:
 	case WM_VSCROLL:
 	{
 		pInstance->onScrollEvent(LOWORD(wParam), HIWORD(wParam), message == WM_VSCROLL);
-		return 0;
+		return FALSE;
 	}
-	case WM_KEYDOWN:
+	case WM_MOUSEMOVE:
 	{
-		switch (wParam) {
-		case VK_ADD:
-		case VK_SUBTRACT:
-			pInstance->zoom(wParam == VK_ADD);
-			return 0;
-		case VK_LEFT:
-		case VK_RIGHT:
-			pInstance->scroll(true, wParam == VK_RIGHT, false);
-			return 0;
-		case VK_UP:
-		case VK_DOWN:
-			pInstance->scroll(false, wParam == VK_DOWN, false);
-			return 0;
+		bool isButtonDown = (wParam & MK_LBUTTON) != 0;
+		if (!pInstance->tracksMouse && pInstance->hTooltip != NULL
+			&& (pInstance->popupCoords || isButtonDown)) {
+			TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
+			tme.hwndTrack = pInstance->hCanvas;
+			tme.dwFlags = TME_LEAVE;
+
+			TrackMouseEvent(&tme);
+
+			// Activate the tooltip.
+			SendMessage(pInstance->hTooltip, TTM_TRACKACTIVATE, (WPARAM)TRUE,
+				(LPARAM)&pInstance->tooltipInfo);
+			//SendMessage(pInstance->hTooltip, TTM_ACTIVATE, (WPARAM)TRUE, 0);
+
+			pInstance->tracksMouse = true;
+
 		}
-		return DefWindowProc(hWnd, message, wParam, lParam);
+		pInstance->onMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 
+			isButtonDown && pInstance->hTooltip != NULL);
+		return FALSE;
 	}
-	case WM_CHAR:
+	case WM_MOUSELEAVE: // The mouse pointer has left our window. Deactivate the tooltip.
 	{
-		switch (wParam) {
-		case 0x1b: // Escape
-			// TODO close the window?
-			return 0;
+		if (pInstance->hTooltip != NULL) {
+			SendMessage(pInstance->hTooltip, TTM_TRACKACTIVATE, (WPARAM)FALSE,
+				(LPARAM)&pInstance->tooltipInfo);
+			//SendMessage(pInstance->hTooltip, TTM_ACTIVATE, (WPARAM)FALSE, 0);
 		}
-		return DefWindowProc(hWnd, message, wParam, lParam);
+		pInstance->tracksMouse = false;
+		return FALSE;
 	}
 	case WM_COMMAND:
 		if (pInstance->onCommand(wParam, lParam)) {
-			return 0;
+			return FALSE;
 		}
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	default:
@@ -396,13 +440,27 @@ VOID TurtleCanvas::onPaint(HDC hdc)
 
 	// Draw the background FIXME do we really have to redraw all?
 	graphics.Clear(pFrame->backgroundColour);
-
+	//BitBlt()
 	// START KGU 2021-03-31: Enh. #6 Care for zooming, displacements and scroll viewport translation
 	//graphics.TranslateTransform(this->displacement.X, this->displacement.Y);
 	graphics.TranslateTransform(-this->scrollPos.x, -this->scrollPos.y);
 	graphics.ScaleTransform(this->zoomFactor, this->zoomFactor);
 	graphics.TranslateTransform(this->displacement.X /** this->zoomFactor*/, this->displacement.Y /* this->zoomFactor*/);
 	// END KGU 2021-03-21
+
+	// Draw the measuring line.
+	// It would be more logical to do it after all the turtle lines, but unfortunately
+	// the process is much slower than the mouse tracking such that it may often get
+	// aborted before it is the turn to draw the measuring line otherwise. Even at the
+	// beginning it is often not drawn completely, or remnants stay on the window. :-(
+	if (this->pDragStart != NULL && this->tracksMouse) {
+		Pen pen(Color(0xcc, 0xcc, 0xff), 1 / this->zoomFactor);
+		REAL dashPattern[] = { 4.0f /*/ this->zoomFactor*/, 4.0f /*/ this->zoomFactor*/ };
+		pen.SetDashPattern(dashPattern, 2);
+		graphics.DrawLine(&pen,
+			(int)this->pDragStart->X, (int)this->pDragStart->Y,
+			(int)this->mouseCoord.X, (int)this->mouseCoord.Y);
+	}
 
 	// Draw the recorded lines
 	for (Turtleizer::Turtles::const_iterator it(pFrame->turtles.begin()); it != pFrame->turtles.end(); ++it)
@@ -413,12 +471,13 @@ VOID TurtleCanvas::onPaint(HDC hdc)
 	// START KGU 2021-03-31: Enh. #6 Draw the axes crossing if specified
 	if (this->showAxes) {
 		RectF bounds = this->pFrame->getBounds();
-		Pen pen(Color(0xcc, 0xcc, 0xff), 1 / this->zoomFactor);
-		REAL dashPattern[] = { 4.0f /*/ this->zoomFactor*/, 4.0f /*/ this->zoomFactor*/ };
+		Pen pen(Color(0xff, 0xcc, 0xcc), 1 / this->zoomFactor);
+		REAL dashPattern[] = { 2.0f /*/ this->zoomFactor*/, 2.0f /*/ this->zoomFactor*/ };
 		pen.SetDashPattern(dashPattern, 2);
 		graphics.DrawLine(&pen, (int)bounds.X, 0, (int)(bounds.X + bounds.Width), 0);
 		graphics.DrawLine(&pen, 0, (int)bounds.Y, 0, (int)(bounds.Y + bounds.Height));
 	}
+
 	// END KGU 2021-03-31
 
 }
@@ -566,6 +625,111 @@ VOID TurtleCanvas::onScrollEvent(WORD scrollAction, WORD pos, BOOL isVertical)
 	this->pFrame->updateStatusbar();
 }
 
+VOID TurtleCanvas::onMouseMove(WORD X, WORD Y, BOOL isButtonDown)
+{
+
+	RectF bounds = this->pFrame->getBounds();
+	PointF ptMouse;
+	ptMouse.X = (X + scrollPos.x) / this->zoomFactor - this->displacement.X;
+	ptMouse.Y = (Y + scrollPos.y) / this->zoomFactor - this->displacement.Y;
+
+	if (isButtonDown) {
+		this->pFrame->snapToNearestPoint(ptMouse, this->snapLines, this->snapRadius);
+	}
+	else {
+		SetCursor(this->hArrow);
+	}
+
+	if (!ptMouse.Equals(this->mouseCoord)) {
+
+		bool updateTooltip = this->hTooltip != NULL
+			&& (isButtonDown || this->popupCoords);
+		this->mouseCoord = ptMouse;
+
+		TCHAR tooltip[100];
+		if (updateTooltip) {
+			// By default fill the popup with the current coordinates
+#if UNICODE
+			swprintf(
+#else
+			sprintf(
+#endif /*UNICODE*/
+				tooltip, ARRAYSIZE(tooltip), TEXT("(%d, %d)"), (int)ptMouse.X, (int)ptMouse.Y
+			);
+		}
+		if (isButtonDown) {
+			if (this->pDragStart == NULL) {
+				this->pDragStart = new PointF(ptMouse);
+				SetCursor(this->hCross);
+			}
+			else {
+				REAL x0 = min(this->pDragStart->X, ptMouse.X) - 10;
+				REAL x1 = max(this->pDragStart->X, ptMouse.X) - 10;
+				REAL y0 = min(this->pDragStart->Y, ptMouse.Y) + 10;
+				REAL y1 = max(this->pDragStart->Y, ptMouse.Y) + 10;
+				RectF measureRect(x0, y0, x1 - x0, y1 - y0);
+				RECT damaged = this->turtle2Window(measureRect);
+				this->redraw(true, &damaged);
+
+				// fill the popup with length, delta, and orientation
+				float deltaX = ptMouse.X - this->pDragStart->X;
+				float deltaY = ptMouse.Y - this->pDragStart->Y;
+				float dist = sqrtf(deltaX * deltaX + deltaY * deltaY);
+				float ori = atan2f(deltaX, deltaY) * 180 / M_PI;
+#if UNICODE
+				swprintf(
+#else
+				sprintf(
+#endif /*UNICODE*/
+					tooltip, ARRAYSIZE(tooltip), TEXT("%0.2f (%d, %d) %0.2f°"),
+					dist, (int)deltaX, (int)deltaY, ori
+				);
+			}
+		}
+		else if (this->pDragStart != NULL) {
+			PointF* pDrag = this->pDragStart;
+			this->pDragStart = NULL;
+			delete(pDrag);
+			// Don't refresh tooltip immediately
+			updateTooltip = false;
+		}
+
+		// FIXME remove this after test
+		//wprintf(L"%c %s\n", this->hTooltip != NULL ? '+' : '-', tooltip);
+		// Raise the popup
+		if (this->hTooltip != NULL && (this->popupCoords || this->pDragStart != NULL)) {
+
+			if (updateTooltip) {
+				this->tooltipInfo.lpszText = tooltip;
+				SendMessage(this->hTooltip, TTM_SETTOOLINFO, 0, (LPARAM)&this->tooltipInfo);
+				//SendMessage(this->hTooltip, TTM_UPDATETIPTEXT, 0, (LPARAM)&this->tooltipInfo);
+			}
+
+			// A little offset is necessary, otherwise we'll get immediately a MV_MOUSELEAVE message
+			POINT pt = { X + 10, Y + 10};
+			ClientToScreen(this->hCanvas, &pt);
+			//printf("Position tooltip to (%d,%d)\n", X, Y);
+			SendMessage(this->hTooltip, TTM_TRACKPOSITION, 0, (LPARAM)MAKELONG(pt.x, pt.y));
+		}
+	}
+}
+
+RECT TurtleCanvas::turtle2Window(const RectF& rect) const
+{
+	RECT rcClient;
+	GetClientRect(this->hCanvas, &rcClient);
+	RectF bounds = this->pFrame->getBounds();
+	int width = rcClient.right - rcClient.left;
+	int height = rcClient.bottom - rcClient.top;
+	RECT rcTarget;
+	rcTarget.left = max(rcClient.left, (LONG)((rect.X + this->displacement.X) * this->zoomFactor - this->scrollPos.x));
+	rcTarget.top = max(rcClient.top, (LONG)((rect.Y + this->displacement.Y) * this->zoomFactor - this->scrollPos.y));
+	rcTarget.right = min(rcClient.right, (LONG)((rect.X + rect.Width + this->displacement.X) * this->zoomFactor - this->scrollPos.x));
+	rcTarget.bottom = min(rcClient.bottom, (LONG)((rect.Y + rect.Height + this->displacement.Y) * this->zoomFactor - this->scrollPos.y));
+
+	return rcTarget;
+}
+
 PointF TurtleCanvas::getCenterCoord() const
 {
 	RECT rcClient;
@@ -583,22 +747,7 @@ PointF TurtleCanvas::getCenterCoord() const
 	};
 }
 
-PointF TurtleCanvas::getMouseCoord(bool snap) const
-{
-	POINT ptMouse{0,0};
-	BOOL done = TRUE;
-	done = done && GetCursorPos(&ptMouse);
-	done = done && ScreenToClient(this->hCanvas, &ptMouse);
-	if (done) {
-		RectF bounds = this->pFrame->getBounds();
-
-		ptMouse.x = (LONG)((ptMouse.x + scrollPos.x) / this->zoomFactor - this->displacement.X);
-		ptMouse.y = (LONG)((ptMouse.y + scrollPos.y) / this->zoomFactor - this->displacement.Y);
-	}
-	return PointF(ptMouse.x, ptMouse.y);
-}
-
-void TurtleCanvas::scrollToCoord(PointF coord)
+void TurtleCanvas::scrollToCoord(const PointF& coord)
 {
 	RECT rcClient;
 	GetClientRect(this->hCanvas, &rcClient);
@@ -807,12 +956,33 @@ BOOL TurtleCanvas::handleToggleCoords(bool testOnly)
 	printf("handleToggleCoords\n");
 #endif /*DEBUG_PRINT*/
 	TurtleCanvas* pInstance = getInstance();
-	// TODO change this when the dialog is implemented
 	BOOL isToCheck = pInstance->popupCoords;
 	if (testOnly) {
 		return isToCheck;
 	}
 	pInstance->popupCoords = !isToCheck;
+	if (isToCheck) {
+		// Switch off the tracking tooltip now
+		if (pInstance->hTooltip != NULL) {
+			SendMessage(pInstance->hTooltip, TTM_TRACKACTIVATE, (WPARAM)FALSE,
+				(LPARAM)&pInstance->tooltipInfo);
+			//SendMessage(pInstance->hTooltip, TTM_ACTIVATE, (WPARAM)FALSE, 0);
+		}
+		pInstance->tracksMouse = false;
+	}
+	//else {
+	//	TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
+	//	tme.hwndTrack = pInstance->hCanvas;
+	//	tme.dwFlags = TME_LEAVE;
+
+	//	TrackMouseEvent(&tme);
+
+	//	 Activate the tooltip.
+	//	SendMessage(pInstance->hTooltip, TTM_TRACKACTIVATE, (WPARAM)TRUE,
+	//		(LPARAM)&pInstance->tooltipInfo);
+
+	//	pInstance->tracksMouse = true;
+	//}
 	return TRUE;
 }
 
@@ -920,9 +1090,9 @@ BOOL TurtleCanvas::handleExportSVG(bool testOnly)
 	}
 	TCHAR szFile[_MAX_PATH] = { 0 };       // The buffer for the file path
 	RectF bounds = pInstance->pFrame->getBounds();
-	String fName = pInstance->chooseFileName(TEXT("All files\0*.*\0SVG files\0*.SVG\0"),
+	WORD ixNameStart = pInstance->chooseFileName(TEXT("All files\0*.*\0SVG files\0*.SVG\0"),
 		TEXT("svg"), szFile);
-	if (!fName.empty()) {
+	if (ixNameStart != 0xFFFFFFFF) {
 		// TODO get the scale via the saveFile dialog...
 		unsigned short scale = 1;
 		RectF bounds = pInstance->pFrame->getBounds();
@@ -935,7 +1105,7 @@ BOOL TurtleCanvas::handleExportSVG(bool testOnly)
 			ostr << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""
 				<< (long)ceil(bounds.Width * scale) << "\" height=\""
 				<< (long)ceil(bounds.Height * scale) << "\">\n";
-			ostr << "  <title>" << fName << "</title>\n";
+			ostr << "  <title>" << szFile + ixNameStart << "</title>\n";
 
 			/* Draw the background:
 			 * The fill colour must not be given as hex code, otherwise the rectangle
@@ -980,8 +1150,9 @@ BOOL TurtleCanvas::handleExportSVG(bool testOnly)
 	return TRUE;
 }
 
-TurtleCanvas::String TurtleCanvas::chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName)
+WORD TurtleCanvas::chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName)
 {
+	WORD nameIndex = 0xFFFFFFFF;
 	OPENFILENAME ofn;       // common dialog box structure
 
 	// Initialize OPENFILENAME
@@ -998,13 +1169,10 @@ TurtleCanvas::String TurtleCanvas::chooseFileName(LPTSTR filters, LPTSTR default
 	ofn.lpstrDefExt = defaultExt;
 	ofn.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT;
 
-	String pureName;
 	if (GetSaveFileName(&ofn) == TRUE) {
-		pureName = String(ofn.lpstrFile + ofn.nFileOffset);
-		size_t posDot = pureName.rfind('.');
-		pureName = pureName.substr(0, posDot);
+		nameIndex = ofn.nFileOffset;
 	}
-	return pureName;
+	return nameIndex;
 }
 
 void TurtleCanvas::updateContextMenu()

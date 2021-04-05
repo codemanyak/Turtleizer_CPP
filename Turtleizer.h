@@ -72,7 +72,7 @@
  * BOTH calls induce an immediate window update.
  * 
  * Since version 11.0.0, the window has several GUI elements to allow zooming, scrolling,
- * measuring and picture export. The functions are aailable via a context menu and accel-
+ * measuring and picture export. The functions are available via a context menu and accel-
  * erator keys. A status bar is showing the main turtle's home and current position, the
  * extensions of the reachable part of the drawing and the scroll range, as well the
  * current zoom factor and the snap mode for measuring (either to lines or only to start
@@ -80,7 +80,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
- * 2021-04-02   VERSION 11.0.0: GUI extensions according to #6
+ * 2021-04-05   VERSION 11.0.0: GUI extensions according to #6 (~ Structorizer 3.31)
  * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
  * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
  * 2018-10-09   New turtle symbol according to Structorizer versions >= 3.28
@@ -101,10 +101,21 @@
  *				new class constant VERSION
  * 2013-09-29	Accomplishment of comments
  * 2013-09-27	turtleImagePath, makeFilePath() added
- * 2013-09-25.	turtleHeight, turtleWidth added
+ * 2013-09-25 	turtleHeight, turtleWidth added
  * 2013-09-20	initial version
  */
-
+// START KGU 2021-04-05: Added for #6 in order to enable tracking tooltips (for measuring)
+// (TODO: Keep this up to date if necessary!)
+#if defined _M_IX86
+#pragma comment(linker, "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#elif defined _M_IA64
+#pragma comment(linker, "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='ia64' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#elif defined _M_X64
+#pragma comment(linker, "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='amd64' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#else
+#pragma comment(linker, "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#endif
+// END KGU 2021-04-05
 #include <windows.h>
 #include <gdiplus.h>
 #include <commctrl.h>
@@ -234,7 +245,6 @@ private:
 	HWND hStatusbar;							// Status bar handle
 	// END KGU 2021-03-28
 	MSG msg;									// Message instance for user interaction
-	WNDCLASS wndClass;							// Keeps the created window class
 	GdiplusStartupInput gdiplusStartupInput;	// Structure needed for GdiplusStartup
 	Turtles turtles;						// List of turtles to be handled here
 	Color backgroundColour;					// Current background colour
@@ -255,6 +265,8 @@ private:
 	// START KGU 2021-03-31: Issue #6
 	// Specifies the effective client area (without statusbar etc.)
 	void getClientRect(RECT& rcClient) const;
+	// Modifies coord to that of the nearest line point or bend within given radius
+	bool snapToNearestPoint(PointF& coord, bool onLines, REAL radius) const;
 	// END KGU 2021-03-31
 	// Listener method (parallel thread) FIXME: better static?
 	void listen();

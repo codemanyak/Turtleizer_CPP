@@ -82,22 +82,27 @@ private:
 	static const NameType WCLASS_NAME;			// Name of the window class
 	static const int IDM_CONTEXT_MENU = 20000;	// Start identifier for context menu items
 	static const MenuDef MENU_DEFINITIONS[];	// Context menu specification
+	TOOLINFO tooltipInfo;						// Tooltip info structure
 	COLORREF customColors[16];					// Cache for user background colours
 	HWND hCanvas;								// The handle of the canvas window (subwindow)
 	HWND hFrame;								// The handle of the frame window
 	Turtleizer* const pFrame;					// Reference to the owning Turtleizer
 	HINSTANCE hInstance;						// Module instance handle
-	WNDCLASS wndClass;							// Holds the created window class
 	HMENU hContextMenu;		// Context menu handle
+	HWND hTooltip;			// Tooltip handle
 	HACCEL hAccel;			// Handle of the accelerator table
+	HCURSOR hArrow, hCross;	// Cursor handles
 	float zoomFactor;		// current zoom factor (1.0f corresponds to 100%)
+	float snapRadius;		// Snap radius
 	PointF displacement;	// Offset of the coordinate origin (never negative)
+	PointF mouseCoord;		// Mouse position in turtle coordinates (snapped)
 	POINT scrollPos;		// Current scroll position (in pixel units!)
+	PointF* pDragStart;		// Start point of measuring line in turtle coords
 	bool popupCoords;		// Whether coordinates are to be shown as popup
 	bool showAxes;			// Whether coordinate axes are to be drawn
 	bool snapLines;			// Snap mode (default: true)
-	float snapRadius;		// Snap radius
 	bool autoUpdate;		// Whether the window is to be updated on every movement
+	bool tracksMouse;		// Set true while the mouse is inside the window
 
 	// Retrieves the responsible instance of this class from the frame
 	static TurtleCanvas* getInstance();
@@ -105,10 +110,11 @@ private:
 	// Updates item visibility and checkboxes of the context menu
 	void updateContextMenu();
 	// Asks for a file name of the given types, writes the result path into filename
-	//    and returns the pure file name as string if successful, otherwise (i.e. if
-	//    the user cancels or it simply fails) returns an empty string
-	String chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName);
-	// Callback method for refresh (OnPaint event)
+	//    and returns the index of the pure file name (without path) into the TCHAR
+	//    array filename if successful, otherwise (i.e. if the user cancels or the
+	//    call simply fails) returns 0xffffffff
+	WORD chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName);
+	// Callback method for refresh (WM_PAINT message event)
 	VOID onPaint(HDC hdc);
 	// Callback method for context menu event
 	VOID onContextMenu(int x, int y);
@@ -116,13 +122,15 @@ private:
 	BOOL onCommand(WPARAM wParam, LPARAM lParam);
 	// Callback method for scroll events
 	VOID onScrollEvent(WORD scrollFlag, WORD pos, BOOL isVertical);
+	// Callback method for mouse moving and dragging
+	VOID onMouseMove(WORD X, WORD Y, BOOL isButtonDown);
 
+	// Converts a turtle rectangle into a window rectangle
+	RECT turtle2Window(const RectF& rect) const;
 	// Retrieves the central point of the client area in turtle coordinates
 	PointF getCenterCoord() const;
-	// Retrieves the mouse position in turtle coordinates (possibly with snap)
-	PointF getMouseCoord(bool snap) const;
 	// Scrolls such that the given turtle coordinate is in the scroll range, ideally in the center
-	void scrollToCoord(PointF coord);
+	void scrollToCoord(const PointF& coord);
 
 	// Menu / accelerator handlers
 	static BOOL handleGotoCoord(bool testOnly);
