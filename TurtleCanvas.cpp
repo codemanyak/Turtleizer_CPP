@@ -90,6 +90,8 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 	, hAccel(NULL)
 	, hArrow(NULL)
 	, hCross(NULL)
+	, hdcScrCompat(NULL)
+	, hBmpCompat(NULL)
 	, tooltipInfo{ 0 }
 	, snapLines(true) 
 	, snapRadius(5.0f)
@@ -101,6 +103,7 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 	, pDragStart(NULL)
 	, mouseCoord(0, 0)
 	, tracksMouse(false)
+	, mustRedraw(true)
 {
 	this->hArrow = LoadCursor(NULL, IDC_ARROW);
 	this->hCross = LoadCursor(NULL, IDC_CROSS);
@@ -154,7 +157,7 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 		customColors[i] = RGB(255, 255, 255);
 	}
 
-	// Create a tooltip - FIXME does not work, i.e. will never e shown!
+	// Create a tooltip
 	// A tooltip control should not have the WS_CHILD style, nor should it 
 	// have an id, otherwise its behavior will be adversely affected.
 	this->hTooltip = CreateWindowEx(0/*WS_EX_TOPMOST*/, TOOLTIPS_CLASS, NULL,
@@ -172,10 +175,7 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 
 	//GetClientRect(this->hCanvas, &this->tooltipInfo.rect);	// FIXME this sensible?
 
-	//SetWindowPos(hTooltip, HWND_TOPMOST, 0, 0, 0, 0,
-	//	SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-	LRESULT res = SendMessage(hTooltip, TTM_ADDTOOL, 0, (LPARAM)&this->tooltipInfo);
-	printf("Result of TTM_ADDTOOL: %c\n", (BOOL)res ? 'T' : 'F');
+	SendMessage(hTooltip, TTM_ADDTOOL, 0, (LPARAM)&this->tooltipInfo);
 
 	// START KGU 2021-03-31: Issue #6
 	adjustScrollbars();
@@ -191,16 +191,11 @@ TurtleCanvas::~TurtleCanvas()
 
 LRESULT TurtleCanvas::CanvasWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	HDC          hdc;
-	PAINTSTRUCT  ps;
-
 	TurtleCanvas* pInstance = getInstance();
 
 	switch (message) {
 	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
-		pInstance->onPaint(hdc);	// instance-specific refresh
-		EndPaint(hWnd, &ps);
+		pInstance->onPaint();	// instance-specific refresh
 		pInstance->adjustScrollbars();
 		return FALSE;
 	case WM_CONTEXTMENU:
@@ -220,6 +215,7 @@ LRESULT TurtleCanvas::CanvasWndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	case WM_MOUSEMOVE:
 	{
 		bool isButtonDown = (wParam & MK_LBUTTON) != 0;
+		SetCursor(isButtonDown ? pInstance->hCross : pInstance->hArrow);
 		if (!pInstance->tracksMouse && pInstance->hTooltip != NULL
 			&& (pInstance->popupCoords || isButtonDown)) {
 			TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
@@ -231,7 +227,6 @@ LRESULT TurtleCanvas::CanvasWndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			// Activate the tooltip.
 			SendMessage(pInstance->hTooltip, TTM_TRACKACTIVATE, (WPARAM)TRUE,
 				(LPARAM)&pInstance->tooltipInfo);
-			//SendMessage(pInstance->hTooltip, TTM_ACTIVATE, (WPARAM)TRUE, 0);
 
 			pInstance->tracksMouse = true;
 
@@ -245,7 +240,6 @@ LRESULT TurtleCanvas::CanvasWndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		if (pInstance->hTooltip != NULL) {
 			SendMessage(pInstance->hTooltip, TTM_TRACKACTIVATE, (WPARAM)FALSE,
 				(LPARAM)&pInstance->tooltipInfo);
-			//SendMessage(pInstance->hTooltip, TTM_ACTIVATE, (WPARAM)FALSE, 0);
 		}
 		pInstance->tracksMouse = false;
 		return FALSE;
@@ -258,6 +252,32 @@ LRESULT TurtleCanvas::CanvasWndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
+}
+
+BOOL TurtleCanvas::CoordDialogProc(HWND hwndDlg, UINT message,
+	WPARAM wParam, LPARAM lParam)
+{
+	// TODO
+	const int txtLen = 80;
+	TCHAR szCoord[txtLen]; // receives Coordinates.
+
+	switch (message)
+	{
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+			if (!GetDlgItemTextW(hwndDlg, 17, szCoord, txtLen))
+				*szCoord = 0;
+
+			// Fall through. 
+
+		case IDCANCEL:
+			EndDialog(hwndDlg, wParam);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 void TurtleCanvas::redraw(const RectF& rectF, int nElements)
@@ -309,11 +329,15 @@ void TurtleCanvas::resize()
 void TurtleCanvas::zoom(bool zoomIn)
 {
 	PointF center = this->getCenterCoord();
+	float oldZoom = this->zoomFactor;
 	if (zoomIn) {
-		this->zoomFactor = min(this->zoomFactor / ZOOM_RATE, MAX_ZOOM);
+		this->zoomFactor = min(oldZoom / ZOOM_RATE, MAX_ZOOM);
 	}
 	else {
-		this->zoomFactor = max(this->zoomFactor * ZOOM_RATE, MIN_ZOOM);
+		this->zoomFactor = max(oldZoom * ZOOM_RATE, MIN_ZOOM);
+	}
+	if (this->zoomFactor == oldZoom) {
+		return;
 	}
 	this->scrollToCoord(center);
 	this->adjustScrollbars();
@@ -349,6 +373,8 @@ void TurtleCanvas::scroll(bool horizontally, bool forward, bool large, unsigned 
 		}
 		this->scrollPos.y = newScr;
 	}
+	this->mustRedraw = true;
+	// TODO: current mouse coordinate must be updated as well
 	this->adjustScrollbars();
 	this->redraw(this->autoUpdate);
 	this->pFrame->updateStatusbar();
@@ -431,44 +457,108 @@ bool TurtleCanvas::translateAccelerators(LPMSG pMessage) const
 	return done;
 }
 
-VOID TurtleCanvas::onPaint(HDC hdc)
+void TurtleCanvas::setDirty()
 {
+	this->mustRedraw = true;
+}
+
+VOID TurtleCanvas::onPaint()
+{
+	PAINTSTRUCT  ps;
+	HDC hdc = BeginPaint(this->hCanvas, &ps);
+	
 	Graphics graphics(hdc);
 #if DEBUG_PRINT
 	printf("executing onPaint on window %x\n", this->hWnd);	// DEBUG
 #endif /*DEBUG_PRINT*/
 
-	// Draw the background FIXME do we really have to redraw all?
-	graphics.Clear(pFrame->backgroundColour);
+	if (mustRedraw && this->hdcScrCompat != NULL) {
+		DeleteDC(this->hdcScrCompat);
+		DeleteObject(this->hBmpCompat);	// FIXME: Might it already have been deleted?;
+		this->hBmpCompat = NULL;
+		this->hdcScrCompat = NULL;
+	}
+	if (this->hdcScrCompat == NULL) {
+		// Create a memory DC as bitmap backup for the turtle drawings
+		// (these do not need redrawing, only additions unless the
+		// background gets changed or certain turtle trayectories get cleared.
+		// Therefore we do not have to redraw all but only the most recently
+		// added lines into the bitmap and may then do a bitblp.
+		// On scrolling, zooming, or resizing, however, we will have to
+		// produce a new bitmap from scratch.
+		// 
+		// Only the turtle images and the measuring lines are to be drawn
+		// directly onto the screen afterwards. This should dramatically
+		// accelerate drawing (with the price of a buffered bitmap)
+		// screen. The normal DC provides a snapshot of the 
+		// screen contents. The memory DC keeps a copy of this 
+		// snapshot in the associated bitmap. 
+		this->hdcScrCompat = CreateCompatibleDC(hdc);
+		if (this->hdcScrCompat == NULL) {
+			this->mustRedraw = true;
+		}
+		else {
+			// Retrieve the metrics for the bitmap associated with the 
+			// regular device context. 
+			this->bmp.bmBitsPixel =
+				(BYTE)GetDeviceCaps(hdc, BITSPIXEL);
+			this->bmp.bmPlanes = (BYTE)GetDeviceCaps(hdc, PLANES);
+			this->bmp.bmWidth = GetDeviceCaps(hdc, HORZRES);
+			this->bmp.bmHeight = GetDeviceCaps(hdc, VERTRES);
+
+			// The width must be byte-aligned. 
+			this->bmp.bmWidthBytes = ((bmp.bmWidth + 15) & ~15) / 8;
+
+			// Create a bitmap for the compatible DC. 
+			this->hBmpCompat = CreateBitmap(bmp.bmWidth, bmp.bmHeight,
+				bmp.bmPlanes, bmp.bmBitsPixel, (CONST VOID*) NULL);
+
+			// Select the bitmap for the compatible DC. 
+			SelectObject(hdcScrCompat, hBmpCompat);
+		}
+	}
+	// Draw the background
+	//graphics.Clear(pFrame->backgroundColour);
 	//BitBlt()
 	// START KGU 2021-03-31: Enh. #6 Care for zooming, displacements and scroll viewport translation
 	//graphics.TranslateTransform(this->displacement.X, this->displacement.Y);
 	graphics.TranslateTransform(-this->scrollPos.x, -this->scrollPos.y);
 	graphics.ScaleTransform(this->zoomFactor, this->zoomFactor);
-	graphics.TranslateTransform(this->displacement.X /** this->zoomFactor*/, this->displacement.Y /* this->zoomFactor*/);
+	graphics.TranslateTransform(this->displacement.X, this->displacement.Y);
 	// END KGU 2021-03-21
 
-	// Draw the measuring line.
-	// It would be more logical to do it after all the turtle lines, but unfortunately
-	// the process is much slower than the mouse tracking such that it may often get
-	// aborted before it is the turn to draw the measuring line otherwise. Even at the
-	// beginning it is often not drawn completely, or remnants stay on the window. :-(
-	if (this->pDragStart != NULL && this->tracksMouse) {
-		Pen pen(Color(0xcc, 0xcc, 0xff), 1 / this->zoomFactor);
-		REAL dashPattern[] = { 4.0f /*/ this->zoomFactor*/, 4.0f /*/ this->zoomFactor*/ };
-		pen.SetDashPattern(dashPattern, 2);
-		graphics.DrawLine(&pen,
-			(int)this->pDragStart->X, (int)this->pDragStart->Y,
-			(int)this->mouseCoord.X, (int)this->mouseCoord.Y);
+	if (this->hdcScrCompat != NULL) {
+		Graphics grCompat(this->hdcScrCompat);
+		if (mustRedraw) {
+			grCompat.Clear(pFrame->backgroundColour);
+		}
+		grCompat.TranslateTransform(-this->scrollPos.x, -this->scrollPos.y);
+		grCompat.ScaleTransform(this->zoomFactor, this->zoomFactor);
+		grCompat.TranslateTransform(this->displacement.X, this->displacement.Y);
+
+		// Draw / update the recorded lines (without the turtle images temselves)
+		for (Turtleizer::Turtles::const_iterator it(pFrame->turtles.begin()); it != pFrame->turtles.end(); ++it)
+		{
+			(*it)->draw(grCompat, mustRedraw, false);
+		}
+
+		// Now copy the contents to the true context
+		RECT* prect = &ps.rcPaint;	// FIXME in certain cases we might need the entire client area
+
+		BitBlt(ps.hdc,
+			prect->left, prect->top,
+			(prect->right - prect->left),
+			(prect->bottom - prect->top),
+			this->hdcScrCompat,
+			prect->left,
+			prect->top,
+			SRCCOPY);
+
 	}
 
-	// Draw the recorded lines
-	for (Turtleizer::Turtles::const_iterator it(pFrame->turtles.begin()); it != pFrame->turtles.end(); ++it)
-	{
-		(*it)->draw(graphics);
-	}
+	// Now draw all things that may be switched off or moved directly on the screen
 
-	// START KGU 2021-03-31: Enh. #6 Draw the axes crossing if specified
+	// START KGU 2021-03-31: Enh. #6 Draw the axes crossing if specified directly
 	if (this->showAxes) {
 		RectF bounds = this->pFrame->getBounds();
 		Pen pen(Color(0xff, 0xcc, 0xcc), 1 / this->zoomFactor);
@@ -479,7 +569,43 @@ VOID TurtleCanvas::onPaint(HDC hdc)
 	}
 
 	// END KGU 2021-03-31
+	// Draw the measuring line.
+	// It is of course more logical to do it after all the turtle lines, but in case
+	// we can't use the memory DC with the fast BitBlt we will have to start with the
+	// measuring line because the process is much slower than the mouse tracking such
+	// that it may often get aborted before it is the turn to draw the measuring line
+	// otherwise. Even at the beginning it is often not drawn completely, or remnants
+	// stay on the window. :-(
+	if (this->pDragStart != NULL && this->tracksMouse) {
+		Pen pen(Color(0xcc, 0xcc, 0xff), 1 / this->zoomFactor);
+		REAL dashPattern[] = { 4.0f /*/ this->zoomFactor*/, 4.0f /*/ this->zoomFactor*/ };
+		pen.SetDashPattern(dashPattern, 2);
+		graphics.DrawLine(&pen,
+			(int)this->pDragStart->X, (int)this->pDragStart->Y,
+			(int)this->mouseCoord.X, (int)this->mouseCoord.Y);
+	}
 
+	if (this->hdcScrCompat != NULL) {
+		// Draw the turtle images directly on the true device context
+		for (Turtleizer::Turtles::const_iterator it(pFrame->turtles.begin()); it != pFrame->turtles.end(); ++it)
+		{
+			(*it)->drawImage(graphics);
+		}
+	}
+	else {
+		// Unfortunately we must draw all directly...
+
+		// Draw / update the recorded lines (without the turtle images temselves)
+		for (Turtleizer::Turtles::const_iterator it(pFrame->turtles.begin()); it != pFrame->turtles.end(); ++it)
+		{
+			(*it)->draw(graphics);
+		}
+	}
+
+	this->mustRedraw = false;
+
+	// END KGU 2021-03-31
+	EndPaint(this->hCanvas, &ps);
 }
 
 VOID TurtleCanvas::onContextMenu(int x, int y)
@@ -621,6 +747,7 @@ VOID TurtleCanvas::onScrollEvent(WORD scrollAction, WORD pos, BOOL isVertical)
 		}
 		break;
 	}
+	this->mustRedraw = true;
 	InvalidateRect(this->hCanvas, &rcClient, FALSE);
 	this->pFrame->updateStatusbar();
 }
@@ -632,12 +759,14 @@ VOID TurtleCanvas::onMouseMove(WORD X, WORD Y, BOOL isButtonDown)
 	PointF ptMouse;
 	ptMouse.X = (X + scrollPos.x) / this->zoomFactor - this->displacement.X;
 	ptMouse.Y = (Y + scrollPos.y) / this->zoomFactor - this->displacement.Y;
+	if (this->pDragStart != NULL) {
+		RECT rcClient;
+		GetClientRect(this->hCanvas, &rcClient);
+		InvalidateRect(this->hCanvas, &rcClient, TRUE);
+	}
 
 	if (isButtonDown) {
 		this->pFrame->snapToNearestPoint(ptMouse, this->snapLines, this->snapRadius);
-	}
-	else {
-		SetCursor(this->hArrow);
 	}
 
 	if (!ptMouse.Equals(this->mouseCoord)) {
@@ -660,7 +789,6 @@ VOID TurtleCanvas::onMouseMove(WORD X, WORD Y, BOOL isButtonDown)
 		if (isButtonDown) {
 			if (this->pDragStart == NULL) {
 				this->pDragStart = new PointF(ptMouse);
-				SetCursor(this->hCross);
 			}
 			else {
 				REAL x0 = min(this->pDragStart->X, ptMouse.X) - 10;
@@ -760,7 +888,9 @@ void TurtleCanvas::scrollToCoord(const PointF& coord)
 	scrollPos.x = max(0, min((LONG)((coord.X + this->displacement.X) * this->zoomFactor) - width/2, xMax - width));
 	scrollPos.y = max(0, min((LONG)((coord.Y + this->displacement.Y) * this->zoomFactor) - height/2, yMax - height));
 
+	this->mustRedraw = true;
 	InvalidateRect(this->hCanvas, &rcClient, TRUE);
+	UpdateWindow(this->hCanvas);
 	this->pFrame->updateStatusbar();
 }
 
@@ -775,6 +905,19 @@ BOOL TurtleCanvas::handleGotoCoord(bool testOnly)
 		return canDo;
 	}
 	// TODO: Open an dialog to ask for the coordinates
+	//if (DialogBox(this->hInstance,
+	//	TEXT(""),
+	//	this->hCanvas,
+	//	(DLGPROC)CoordDialogProc) == IDOK)
+	//{
+	//	// Complete the command; szItemName contains the 
+	//	// name of the item to delete. 
+	//}
+
+	//else
+	//{
+	//	// Cancel the command. 
+	//}
 	// START KGU 2021-03-31: Enh. #6
 	getInstance()->adjustScrollbars();
 	// END KGU 2021-03-31
@@ -842,6 +985,7 @@ BOOL TurtleCanvas::handleZoom100(bool testOnly)
 	// Try to keep current center coordinate
 	PointF center = pInstance->getCenterCoord();
 	pInstance->zoomFactor = 1.0f;
+	pInstance->mustRedraw = true;
 	pInstance->scrollToCoord(center);
 	return TRUE;
 }
@@ -864,6 +1008,7 @@ BOOL TurtleCanvas::handleZoomBounds(bool testOnly)
 	pInstance->zoomFactor = max(MIN_ZOOM, min(zoomH, zoomV));
 	pInstance->scrollPos.x = 0;
 	pInstance->scrollPos.y = 0;
+	pInstance->mustRedraw = true;
 	pInstance->redraw(pInstance->autoUpdate);
 	pInstance->adjustScrollbars();
 	pInstance->pFrame->updateStatusbar();
@@ -966,23 +1111,9 @@ BOOL TurtleCanvas::handleToggleCoords(bool testOnly)
 		if (pInstance->hTooltip != NULL) {
 			SendMessage(pInstance->hTooltip, TTM_TRACKACTIVATE, (WPARAM)FALSE,
 				(LPARAM)&pInstance->tooltipInfo);
-			//SendMessage(pInstance->hTooltip, TTM_ACTIVATE, (WPARAM)FALSE, 0);
 		}
 		pInstance->tracksMouse = false;
 	}
-	//else {
-	//	TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
-	//	tme.hwndTrack = pInstance->hCanvas;
-	//	tme.dwFlags = TME_LEAVE;
-
-	//	TrackMouseEvent(&tme);
-
-	//	 Activate the tooltip.
-	//	SendMessage(pInstance->hTooltip, TTM_TRACKACTIVATE, (WPARAM)TRUE,
-	//		(LPARAM)&pInstance->tooltipInfo);
-
-	//	pInstance->tracksMouse = true;
-	//}
 	return TRUE;
 }
 

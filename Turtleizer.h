@@ -216,7 +216,10 @@ public:
 	// standard behaviour to update the window after every movement.
 	void updateWindow(bool automatic = true);
 	// Refresh the window (i. e. invalidate the region rect) 
-	void refresh(const RectF& rect, int nElements) const;
+	void refresh(const RectF& rect, int nElements);
+	// Returns tre if the entire drawing are must be completely redrawn (beacuse e.g.
+	// the window background has changed or some turtle cleared its trayectory
+	bool isDirty() const;
 
 	// Creates and adds a new turtle symbolized by the the icon specifed by the given imagPath
 	// at the given position to the Turtleizer

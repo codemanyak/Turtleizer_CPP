@@ -40,6 +40,8 @@ public:
 	~TurtleCanvas();
 	static LRESULT CALLBACK CanvasWndProc(HWND hWnd, UINT message,
 		WPARAM wParam, LPARAM lParam);
+	static BOOL CALLBACK CoordDialogProc(HWND hwndDlg, UINT message,
+		WPARAM wParam, LPARAM lParam);
 	// Redraws the turtle canvas (with nElements lines), at least in the given coord rectangle rectF
 	void redraw(const RectF& rectF, int nElements);
 	// Redraws the turtle canvas (in the pixel rectangle pRect) and sets the autoUpdate mode according to automatic
@@ -61,6 +63,8 @@ public:
 	RECT getScrollRect() const;
 	// Translates accelerators as far as defined (returns whether it was handled)
 	bool translateAccelerators(LPMSG pMessage) const;
+	// Informs the canvas that the next redrawing has to be done from scratch
+	void setDirty();
 
 private:
 #ifdef UNICODE
@@ -92,6 +96,9 @@ private:
 	HWND hTooltip;			// Tooltip handle
 	HACCEL hAccel;			// Handle of the accelerator table
 	HCURSOR hArrow, hCross;	// Cursor handles
+	HDC hdcScrCompat;		// memory DC for window buffering
+	HBITMAP hBmpCompat;		// bitmap handle to memory DC 
+	BITMAP bmp;				// bitmap data structure
 	float zoomFactor;		// current zoom factor (1.0f corresponds to 100%)
 	float snapRadius;		// Snap radius
 	PointF displacement;	// Offset of the coordinate origin (never negative)
@@ -103,6 +110,7 @@ private:
 	bool snapLines;			// Snap mode (default: true)
 	bool autoUpdate;		// Whether the window is to be updated on every movement
 	bool tracksMouse;		// Set true while the mouse is inside the window
+	bool mustRedraw;		// Flag indicating that the memory DC must be redrawn
 
 	// Retrieves the responsible instance of this class from the frame
 	static TurtleCanvas* getInstance();
@@ -115,7 +123,7 @@ private:
 	//    call simply fails) returns 0xffffffff
 	WORD chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName);
 	// Callback method for refresh (WM_PAINT message event)
-	VOID onPaint(HDC hdc);
+	VOID onPaint();
 	// Callback method for context menu event
 	VOID onContextMenu(int x, int y);
 	// General callback method for command handling

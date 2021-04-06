@@ -114,10 +114,14 @@ public:
 	 */
 	REAL getNearestPoint(const PointF& coord, bool betweenEnds, double radius, PointF& nearest) const;
 
-	// Draws this turtle and its trayectory in 2D graphics gr
-	void draw(Graphics& gr) const;
+	// Draws the trayectory of this turtle (and possibly the turtle itself) in 2D graphics gr
+	void draw(Graphics& gr, bool drawAll = true, bool withImage = true);
+	// Draws this turtle (if visible) in 2D graphics gr
+	void drawImage(Graphics& gr) const;
 	// Reports whether this turtle has drawn elements
-	boolean hasElements() const;
+	bool hasElements() const;
+	// Signals whether elements have been added since last call of draw()
+	bool isDirty() const;
 	// Writes SVG descriptions of the elements to the given stream
 	void writeSVG(std::ostream& ostr, PointF offset, unsigned short scale = 1) const;
 
@@ -127,16 +131,18 @@ protected:
 private:
 	static const int MAX_POINTS_PER_SVG_PATH = 800;
 	static const LPCWSTR TURTLE_IMAGE_FILE;		// File name of the turtle image
-	const Turtleizer* pTurtleizer;				// The singleton Turtleizer instance
+	Turtleizer* const pTurtleizer;				// The singleton Turtleizer instance
 	LPCWSTR	turtleImagePath;					// The derived turtle file path
 	UINT turtleWidth, turtleHeight;				// The turtle image extensions
 	Gdiplus::PointF pos;						// current turtle position
 	Gdiplus::RectF bounds;						// current bounds of the trayectory
 	double orient;							// current orientation in degrees
-	bool penIsDown;							// Whether the pen is ready to draw
-	bool isVisible;							// Whether the turtle itself ought to be visible
 	Elements elements;						// List of lines drawn in this session
 	Color defaultColour;					// Default colour for line segments without explicit colour
+	Elements::const_iterator lastDrawn;		// Iterator to the last drawn element
+	unsigned int nDrawn;					// Number of drawn elements so far
+	bool penIsDown;							// Whether the pen is ready to draw
+	bool isVisible;							// Whether the turtle itself ought to be visible
 
 	// Composes a file path from the path of this source file (project
 	// folder) if and the given file name `filename´.

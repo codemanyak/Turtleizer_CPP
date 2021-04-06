@@ -40,16 +40,18 @@
 const LPCWSTR Turtle::TURTLE_IMAGE_FILE = WIDEN("turtle.png");
 
 Turtle::Turtle(int x, int y, LPCWSTR imagePath)
-: turtleImagePath(nullptr)
-, turtleWidth(35)	// Just some default
-, turtleHeight(35)	// Just some default
-, pos((REAL)x, (REAL)y)
-, bounds((REAL)x, (REAL)y, (REAL)1, (REAL)1)
-, penIsDown(true)
-, isVisible(true)
-, orient(0.0)
-, defaultColour(Color::Black)
-, pTurtleizer(Turtleizer::getInstance())
+	: turtleImagePath(nullptr)
+	, turtleWidth(35)	// Just some default
+	, turtleHeight(35)	// Just some default
+	, pos((REAL)x, (REAL)y)
+	, bounds((REAL)x, (REAL)y, (REAL)1, (REAL)1)
+	, penIsDown(true)
+	, isVisible(true)
+	, orient(0.0)
+	, defaultColour(Color::Black)
+	, pTurtleizer(Turtleizer::getInstance())
+	, lastDrawn(elements.cend())
+	, nDrawn(0)
 {
 	if (imagePath != nullptr) {
 		this->turtleImagePath = this->makeFilePath(imagePath, false);
@@ -87,6 +89,9 @@ void Turtle::forward(double pixels, Color col)
 	this->pos.Y -= (REAL)(pixels * sin(angle));
 	if (this->penIsDown) {
 		this->elements.push_back(TurtleLine(oldP.X, oldP.Y, this->pos.X, this->pos.Y, col));
+		if (this->elements.size() == 1) {
+			this->lastDrawn = this->elements.cbegin();
+		}
 		RectF::Union(this->bounds, this->bounds, RectF(this->pos.X, this->pos.Y, 1, 1));
 	}
 	this->refresh(oldP);
@@ -110,6 +115,9 @@ void Turtle::fd(int pixels, Color col)
 	this->pos.Y -= (REAL)round(pixels * sin(angle));
 	if (this->penIsDown) {
 		this->elements.push_back(TurtleLine(oldP.X, oldP.Y, this->pos.X, this->pos.Y, col));
+		if (this->elements.size() == 1) {
+			this->lastDrawn = this->elements.cbegin();
+		}
 		RectF::Union(this->bounds, this->bounds, RectF(this->pos.X, this->pos.Y, 1, 1));
 	}
 	this->refresh(oldP);
@@ -185,9 +193,15 @@ void Turtle::setPenColor(unsigned char red, unsigned char green, unsigned char b
 // Wipes all drawn content of this turtle
 void Turtle::clear()
 {
+	RectF oldBounds(this->getBounds());
 	this->elements.clear();
 	this->bounds = RectF(this->pos.X, this->pos.Y, 1.0f, 1.0f);
-	this->refresh(this->pos);
+	this->lastDrawn = this->elements.cend();
+	this->nDrawn = 0;
+	// START KGU 2021-04-05: issue #6 performance improvement
+	//this->refresh(this->pos);
+	this->pTurtleizer->refresh(bounds, -1);
+	// END KGU 2021-04-05
 }
 
 // Returns the current horizontal pixel position in floating-point resolution
@@ -296,20 +310,76 @@ REAL Turtle::getNearestPoint(const PointF& coord, bool betweenEnds, double radiu
 	return minDist;
 }
 
-void Turtle::draw(Graphics& gr) const
+void Turtle::draw(Graphics& gr, bool drawAll, bool withImage)
 {
-	for (Elements::const_iterator it(this->elements.cbegin()); it != this->elements.cend(); ++it)
-	{
-		it->draw(gr);
+	// START KGU 2021-04-05: issue #6 performance improvement
+	//for (Elements::const_iterator it(this->elements.cbegin()); it != this->elements.cend(); ++it)
+	//{
+	//	it->draw(gr);
+	//}
+	if (drawAll) {
+		this->nDrawn = 0;
+		this->lastDrawn = this->elements.cbegin();
 	}
+	int nElements = this->elements.size();
+	Elements::const_iterator it(this->lastDrawn);
+	if (nElements == this->nDrawn) {
+		return;
+	}
+	else if (this->nDrawn > 0) {
+		++it;
+	}
+	for (; this->nDrawn < nElements; ++it, this->nDrawn++) {
+		it->draw(gr);
+		if (this->nDrawn > 0) {
+			++this->lastDrawn;
+		}
+	}
+	// END KGU  2021-04-05
 
-	// Draw a text
-	//SolidBrush  brush(Color(255, 0, 0, 255));
-	//FontFamily  fontFamily(L"Times New Roman");
-	//Font        font(&fontFamily, 24, FontStyleRegular, UnitPixel);
-	//PointF      pointF(10.0f, 20.0f);
-	//graphics.DrawString(L"I forced this damned thing!", -1, &font, pointF, &brush);
+	// START KGU 2021-04-05: Issue #6, delegated to drawImage()
+//	if (this->isVisible) {
+//		Matrix transf;
+//		gr.GetTransform(&transf);
+//		//Gdiplus::REAL matrix[6];
+//		// Display an image
+//		//Image* image = new Image(L"Turtle.png");
+//		Image* image = new Image(this->turtleImagePath);
+//		// START KGU 2019-07-08 Workaround #3
+//		//PointF pointF(-(REAL)this->turtleWidth / (REAL)2.0, -(REAL)this->turtleHeight / (REAL)2.0);
+//		REAL scaleX = gr.GetDpiX() / image->GetHorizontalResolution();
+//		REAL scaleY = gr.GetDpiY() / image->GetVerticalResolution();
+//		PointF pointF(-(REAL)this->turtleWidth * scaleX / (REAL)2.0,
+//			-(REAL)this->turtleHeight * scaleY / (REAL)2.0);
+//		// END KGU 2019-07-08
+//#if DEBUG_PRINT
+//		printf("The width of the image is %u.\n", this->turtleWidth);
+//		printf("The height of the image is %u.\n", this->turtleHeight);
+//#endif /*DEBUG_PRINT*/
+//		gr.TranslateTransform(this->pos.X, this->pos.Y);
+//		gr.RotateTransform(-(REAL)this->orient);
+//
+//		//Matrix transf;
+//		//gr.GetTransform(&transf);
+//		//Gdiplus::Status status = transf.GetElements(matrix);
+//
+//		gr.DrawImage(image, pointF);
+//		// Restore original transform
+//		gr.ResetTransform();
+//		gr.SetTransform(&transf);
+//		gr.Flush();
+//		delete image;
+//	}
+	if (withImage && this->isVisible) {
+		this->drawImage(gr);
+	}
+	// END KGU 2021-04-05
 
+}
+
+// START KGU 2021-04-05: Issue #6 drawing of the icon separated
+void Turtle::drawImage(Graphics& gr) const
+{
 	if (this->isVisible) {
 		Matrix transf;
 		gr.GetTransform(&transf);
@@ -342,10 +412,10 @@ void Turtle::draw(Graphics& gr) const
 		gr.Flush();
 		delete image;
 	}
-
 }
+// END KGU 2021-04-05
 
-boolean Turtle::hasElements() const
+bool Turtle::hasElements() const
 {
 	return !this->elements.empty();
 }

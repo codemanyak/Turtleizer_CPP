@@ -320,6 +320,7 @@ void Turtleizer::showTurtle(bool show)
 void Turtleizer::setBackground(unsigned char red, unsigned char green, unsigned char blue)
 {
 	this->backgroundColour = Color(red, green, blue);
+	this->pCanvas->setDirty();
 	InvalidateRect(this->hWnd, NULL, TRUE);
 	UpdateWindow(this->hWnd);
 }
@@ -362,8 +363,12 @@ double Turtleizer::getOrientation() const
 }
 
 // Refresh the window (i. e. invalidate the region between oldPos and this->pos) 
-void Turtleizer::refresh(const RectF& rect, int nElements) const
+void Turtleizer::refresh(const RectF& rect, int nElements)
 {
+	if (nElements < 0) {
+		// A turtle has cleared its traces such that all is to be redrawn completely
+		this->pCanvas->setDirty();
+	}
 	pCanvas->redraw(rect, nElements);
 }
 
