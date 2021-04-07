@@ -18,6 +18,7 @@
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2021-04-07   Some revisions for redrawing and tooltip update
  * 2021-04-05   Measuring tooltip implemented.
  * 2021-04-03   SVG export implemented
  * 2021-04-02   Scrolling, zooming, and background choice implemented
@@ -82,6 +83,11 @@ const TurtleCanvas::MenuDef TurtleCanvas::MENU_DEFINITIONS[] = {
 };
 // END KGU 2021-03-28
 
+// START KGU 2021-04-07: Issue #6 CSV export
+const char* TurtleCanvas::CSV_COL_HEADERS[] = { "xFrom", "yFrom", "xTo", "yTo", "color" };
+const char TurtleCanvas::CSV_SEPARATORS[] = { ',', ';', '\t', ' ', ':' };
+// END KGU 2021-04-07
+
 TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 	: pFrame(&frame)
 	, hFrame(hFrame)
@@ -90,6 +96,7 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 	, hAccel(NULL)
 	, hArrow(NULL)
 	, hCross(NULL)
+	, hWait(NULL)
 	, hdcScrCompat(NULL)
 	, hBmpCompat(NULL)
 	, tooltipInfo{ 0 }
@@ -107,6 +114,7 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 {
 	this->hArrow = LoadCursor(NULL, IDC_ARROW);
 	this->hCross = LoadCursor(NULL, IDC_CROSS);
+	this->hWait = LoadCursor(NULL, IDC_WAIT);
 
 	WNDCLASS wndClass = { 0 };
 	wndClass.style = CS_HREDRAW | CS_VREDRAW;
@@ -374,7 +382,12 @@ void TurtleCanvas::scroll(bool horizontally, bool forward, bool large, unsigned 
 		this->scrollPos.y = newScr;
 	}
 	this->mustRedraw = true;
-	// TODO: current mouse coordinate must be updated as well
+	// Force the mouse coordinate to be updated
+	if (this->hTooltip != NULL) {
+		SendMessage(this->hTooltip, TTM_TRACKACTIVATE, (WPARAM)FALSE,
+			(LPARAM)&this->tooltipInfo);
+	}
+	this->tracksMouse = false;
 	this->adjustScrollbars();
 	this->redraw(this->autoUpdate);
 	this->pFrame->updateStatusbar();
@@ -401,7 +414,6 @@ void TurtleCanvas::adjustScrollbars()
 	scrInfo.nMax = xMax;
 	scrInfo.nPage = width;
 	scrInfo.nPos = this->scrollPos.x;
-	scrInfo.nTrackPos += this->scrollPos.x;	// Necessary at all?
 	SetScrollInfo(this->hCanvas, SB_HORZ, &scrInfo, TRUE);
 
 	// Set the vertical scroll parameters
@@ -411,7 +423,6 @@ void TurtleCanvas::adjustScrollbars()
 	scrInfo.nMax = yMax;
 	scrInfo.nPage = height;
 	scrInfo.nPos = this->scrollPos.y;
-	scrInfo.nTrackPos = this->scrollPos.y;	// Necessary at all?
 	SetScrollInfo(this->hCanvas, SB_VERT, &scrInfo, TRUE);
 }
 
@@ -464,6 +475,7 @@ void TurtleCanvas::setDirty()
 
 VOID TurtleCanvas::onPaint()
 {
+	HCURSOR oldCursor = GetCursor();
 	PAINTSTRUCT  ps;
 	HDC hdc = BeginPaint(this->hCanvas, &ps);
 	
@@ -471,6 +483,7 @@ VOID TurtleCanvas::onPaint()
 #if DEBUG_PRINT
 	printf("executing onPaint on window %x\n", this->hWnd);	// DEBUG
 #endif /*DEBUG_PRINT*/
+
 
 	if (mustRedraw && this->hdcScrCompat != NULL) {
 		DeleteDC(this->hdcScrCompat);
@@ -492,7 +505,8 @@ VOID TurtleCanvas::onPaint()
 		// accelerate drawing (with the price of a buffered bitmap)
 		// screen. The normal DC provides a snapshot of the 
 		// screen contents. The memory DC keeps a copy of this 
-		// snapshot in the associated bitmap. 
+		// snapshot in the associated bitmap.
+		SetCursor(this->hWait);
 		this->hdcScrCompat = CreateCompatibleDC(hdc);
 		if (this->hdcScrCompat == NULL) {
 			this->mustRedraw = true;
@@ -606,6 +620,7 @@ VOID TurtleCanvas::onPaint()
 
 	// END KGU 2021-03-31
 	EndPaint(this->hCanvas, &ps);
+	SetCursor(oldCursor);
 }
 
 VOID TurtleCanvas::onContextMenu(int x, int y)
@@ -888,6 +903,11 @@ void TurtleCanvas::scrollToCoord(const PointF& coord)
 	scrollPos.x = max(0, min((LONG)((coord.X + this->displacement.X) * this->zoomFactor) - width/2, xMax - width));
 	scrollPos.y = max(0, min((LONG)((coord.Y + this->displacement.Y) * this->zoomFactor) - height/2, yMax - height));
 
+	if (this->hTooltip != NULL) {
+		SendMessage(this->hTooltip, TTM_TRACKACTIVATE, (WPARAM)FALSE,
+			(LPARAM)&this->tooltipInfo);
+	}
+	this->tracksMouse = false;
 	this->mustRedraw = true;
 	InvalidateRect(this->hCanvas, &rcClient, TRUE);
 	UpdateWindow(this->hCanvas);
@@ -1182,10 +1202,56 @@ BOOL TurtleCanvas::handleExportCSV(bool testOnly)
 #endif /*DEBUG_PRINT*/
 	// TODO change this when the dialog is implemented
 	BOOL canDo = FALSE;
+	TurtleCanvas* pInstance = getInstance();
+	for (Turtle* pTurtle : pInstance->pFrame->turtles) {
+		if (pTurtle->hasElements()) {
+			canDo = TRUE;
+			break;
+		}
+	}
 	if (!canDo || testOnly) {
 		return canDo;
 	}
-	// TODO
+	TCHAR szFile[_MAX_PATH] = { 0 };       // The buffer for the file path
+	WORD ixNameStart = pInstance->chooseFileName(TEXT("All files\0*.*\0Comma-separated values files\0*.csv\0Text files\0*.txt\0"),
+		TEXT("csv"), szFile);
+	if (ixNameStart != 0xFFFFFFFF) {
+		HCURSOR oldCursor = GetCursor();
+		SetCursor(pInstance->hWait);
+		const unsigned short nCols = sizeof(CSV_COL_HEADERS) / sizeof(char*);
+		char separator = ';';	// Default separator
+		// TODO get the separator via the saveFile dialog...
+		std::ofstream ostr(szFile);
+		if (ostr.is_open()) {
+			for (unsigned short col = 0; col < nCols; col++) {
+				if (col > 0) {
+					ostr << separator;
+				}
+				ostr << CSV_COL_HEADERS[col];
+			}
+			ostr << std::endl;
+			for (Turtle* pTurtle : pInstance->pFrame->turtles) {
+				pTurtle->writeCSV(ostr, separator);
+			}
+		}
+		else {
+			MessageBox(
+				pInstance->hFrame,
+				TEXT("File could not be opened."),
+				TEXT("Export failed"),
+				MB_ICONERROR | MB_OK
+			);
+		}
+		SetCursor(oldCursor);
+	}
+	else {
+		MessageBox(
+			pInstance->hFrame,
+			TEXT("No CSV export was done."),
+			TEXT("Export canceled"),
+			MB_ICONERROR | MB_OK
+		);
+	}
 	return TRUE;
 }
 
@@ -1224,6 +1290,8 @@ BOOL TurtleCanvas::handleExportSVG(bool testOnly)
 	WORD ixNameStart = pInstance->chooseFileName(TEXT("All files\0*.*\0SVG files\0*.SVG\0"),
 		TEXT("svg"), szFile);
 	if (ixNameStart != 0xFFFFFFFF) {
+		HCURSOR oldCursor = GetCursor();
+		SetCursor(pInstance->hWait);
 		// TODO get the scale via the saveFile dialog...
 		unsigned short scale = 1;
 		RectF bounds = pInstance->pFrame->getBounds();
@@ -1268,6 +1336,7 @@ BOOL TurtleCanvas::handleExportSVG(bool testOnly)
 				MB_ICONERROR | MB_OK
 			);
 		}
+		SetCursor(oldCursor);
 	}
 	else {
 		MessageBox(

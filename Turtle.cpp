@@ -15,6 +15,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2021-04-06   VERSION 11.0.0: Method draw decomposed to support memory HDC / bitblt
  * 2021-04-05   VERSION 11.0.0: New method for SVG export, nearest point search
  * 2021-04-02   VERSION 11.0.0: Enh. #6 (tracking of the bounds and new internal methods)
  * 2019-07-08   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2, #3
@@ -473,6 +474,22 @@ void Turtle::writeSVG(std::ostream& ostr, PointF offset, unsigned short scale) c
 	}
 
 }
+
+void Turtle::writeCSV(std::ostream& ostr, char separator) const
+{
+	char colStr[9];
+	for (Elements::const_iterator it(this->elements.cbegin()); it != this->elements.cend(); ++it)
+	{
+		PointF from = it->getFrom();
+		PointF to = it->getTo();
+		Color col = it->getColor();
+		sprintf(colStr, "ff%02x%02x%02x", col.GetRed(), col.GetGreen(), col.GetBlue());
+		ostr << (int)from.X << separator << (int)from.Y << separator
+			<< (int)to.X << separator << (int)to.Y << separator
+			<< colStr << std::endl;
+	}
+}
+
 
 Turtle::TurtleLine::TurtleLine(REAL x1, REAL y1, REAL x2, REAL y2, Color col)
 : x1(x1)

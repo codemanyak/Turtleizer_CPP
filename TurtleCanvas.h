@@ -86,31 +86,33 @@ private:
 	static const NameType WCLASS_NAME;			// Name of the window class
 	static const int IDM_CONTEXT_MENU = 20000;	// Start identifier for context menu items
 	static const MenuDef MENU_DEFINITIONS[];	// Context menu specification
-	TOOLINFO tooltipInfo;						// Tooltip info structure
-	COLORREF customColors[16];					// Cache for user background colours
-	HWND hCanvas;								// The handle of the canvas window (subwindow)
-	HWND hFrame;								// The handle of the frame window
-	Turtleizer* const pFrame;					// Reference to the owning Turtleizer
-	HINSTANCE hInstance;						// Module instance handle
-	HMENU hContextMenu;		// Context menu handle
-	HWND hTooltip;			// Tooltip handle
-	HACCEL hAccel;			// Handle of the accelerator table
-	HCURSOR hArrow, hCross;	// Cursor handles
-	HDC hdcScrCompat;		// memory DC for window buffering
-	HBITMAP hBmpCompat;		// bitmap handle to memory DC 
-	BITMAP bmp;				// bitmap data structure
-	float zoomFactor;		// current zoom factor (1.0f corresponds to 100%)
-	float snapRadius;		// Snap radius
-	PointF displacement;	// Offset of the coordinate origin (never negative)
-	PointF mouseCoord;		// Mouse position in turtle coordinates (snapped)
-	POINT scrollPos;		// Current scroll position (in pixel units!)
-	PointF* pDragStart;		// Start point of measuring line in turtle coords
-	bool popupCoords;		// Whether coordinates are to be shown as popup
-	bool showAxes;			// Whether coordinate axes are to be drawn
-	bool snapLines;			// Snap mode (default: true)
-	bool autoUpdate;		// Whether the window is to be updated on every movement
-	bool tracksMouse;		// Set true while the mouse is inside the window
-	bool mustRedraw;		// Flag indicating that the memory DC must be redrawn
+	static const char* CSV_COL_HEADERS[];		// Table column headers for the CSV export
+	static const char CSV_SEPARATORS[];			// Choosable separator characters for CSV export
+	TOOLINFO tooltipInfo;			// Tooltip info structure
+	COLORREF customColors[16];		// Cache for user background colours
+	HWND hCanvas;					// The handle of the canvas window (subwindow)
+	HWND hFrame;					// The handle of the frame window
+	Turtleizer* const pFrame;		// Reference to the owning Turtleizer
+	HINSTANCE hInstance;			// Module instance handle
+	HMENU hContextMenu;				// Context menu handle
+	HWND hTooltip;					// Tooltip handle
+	HACCEL hAccel;					// Handle of the accelerator table
+	HCURSOR hArrow, hCross, hWait;	// Cursor handles
+	HDC hdcScrCompat;				// memory DC for window buffering
+	HBITMAP hBmpCompat;				// bitmap handle to memory DC 
+	BITMAP bmp;						// bitmap data structure
+	float zoomFactor;				// current zoom factor (1.0f corresponds to 100%)
+	float snapRadius;				// Snap radius
+	PointF displacement;			// Offset of the coordinate origin (never negative)
+	PointF mouseCoord;				// Mouse position in turtle coordinates (snapped)
+	POINT scrollPos;				// Current scroll position (in pixel units!)
+	PointF* pDragStart;				// Start point of measuring line in turtle coords
+	bool popupCoords;				// Whether coordinates are to be shown as popup
+	bool showAxes;					// Whether coordinate axes are to be drawn
+	bool snapLines;					// Snap mode (default: true)
+	bool autoUpdate;				// Whether the window is to be updated on every movement
+	bool tracksMouse;				// Set true while the mouse is inside the window
+	bool mustRedraw;				// Flag indicating that the memory DC must be redrawn
 
 	// Retrieves the responsible instance of this class from the frame
 	static TurtleCanvas* getInstance();

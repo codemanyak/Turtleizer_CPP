@@ -18,6 +18,8 @@
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2021-04-07	VERSION 11.0.0: Enh. 6 - method writeElementsToCSV added
+ * 2021-04-06   VERSION 11.0.0: Method draw decomposed to support memory HDC / bitblt
  * 2021-04-05	VERSION 11.0.0: New method for SVG export, nearest point search
  * 2021-04-02	VERSION 11.0.0: New methods isTurtleShown() and getBounds() for #6,
  *				signature of method refresh modified
@@ -120,10 +122,10 @@ public:
 	void drawImage(Graphics& gr) const;
 	// Reports whether this turtle has drawn elements
 	bool hasElements() const;
-	// Signals whether elements have been added since last call of draw()
-	bool isDirty() const;
 	// Writes SVG descriptions of the elements to the given stream
 	void writeSVG(std::ostream& ostr, PointF offset, unsigned short scale = 1) const;
+	// Writes the CSV information of all gathered line elements to the given stream ostr
+	void writeCSV(std::ostream& ostr, char separator) const;
 
 protected:
 	// Type name for the list of tracked line elements
