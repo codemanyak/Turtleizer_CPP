@@ -18,6 +18,7 @@
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2021-04-19   Separator choice for CSV export implemented
  * 2021-04-07   Some revisions for redrawing and tooltip update
  * 2021-04-05   Measuring tooltip implemented.
  * 2021-04-03   SVG export implemented
@@ -35,6 +36,32 @@
 #include <windowsx.h>
 
 const TurtleCanvas::NameType TurtleCanvas::WCLASS_NAME = TEXT("TurtleCanvas");
+
+const TurtleCanvas::TDlgSaveCSV TurtleCanvas::tplSaveCSV = {
+	{
+		WS_CHILD | WS_CLIPSIBLINGS | DS_3DLOOK | DS_CONTROL,
+		0,
+		2 + N_CSV_SEPARATORS,
+		0, 0,		// relative horizontal and vertical position
+		75, 170	// horizontal and vertical size
+	},
+	0,	// no menu
+	0,	// standard dialog box class
+	0,	// no title
+	// static text control for positioning
+	{{WS_CHILD | WS_VISIBLE | SS_LEFT, 0, 0, 0, 0, 150, stc32}, 0xFFFF, 0x0082, 0, 0},
+	// group box (label)
+	{{WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 0, 1, 0, 70, 20 * N_CSV_SEPARATORS, IDC_CUST_START}, 0xFFFF, 0x0080, 0, 0},
+	// radio buttons
+	{
+		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON | WS_GROUP, 0, 10, 15, 50, 20, IDC_CUST_START+1}, 0xFFFF, 0x0080, 0, 0},
+		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 35, 50, 15, IDC_CUST_START+2}, 0xFFFF, 0x0080, 0, 0},
+		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 55, 50, 15, IDC_CUST_START+3}, 0xFFFF, 0x0080, 0, 0},
+		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 75, 50, 15, IDC_CUST_START+4}, 0xFFFF, 0x0080, 0, 0},
+		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 95, 50, 15, IDC_CUST_START+5}, 0xFFFF, 0x0080, 0, 0},
+	}
+};
+
 
 // START KGU 2021-03-28: Enhancements for #6
 const float TurtleCanvas::MAX_ZOOM = 2.0f;
@@ -85,8 +112,19 @@ const TurtleCanvas::MenuDef TurtleCanvas::MENU_DEFINITIONS[] = {
 
 // START KGU 2021-04-07: Issue #6 CSV export
 const char* TurtleCanvas::CSV_COL_HEADERS[] = { "xFrom", "yFrom", "xTo", "yTo", "color" };
-const char TurtleCanvas::CSV_SEPARATORS[] = { ',', ';', '\t', ' ', ':' };
+const char TurtleCanvas::CSV_SEPARATORS[N_CSV_SEPARATORS] = { ',', ';', '\t', ' ', ':' };
 // END KGU 2021-04-07
+// START KGU 2021-04-18: Separator configuration for CSV export (#6)
+const TurtleCanvas::NameType TurtleCanvas::CSV_SEPARATOR = TEXT("Separator");
+const TurtleCanvas::NameType TurtleCanvas::CSV_SEPARATOR_NAMES[N_CSV_SEPARATORS] = {
+	TEXT("Comma"),
+	TEXT("Semicolon"),
+	TEXT("Tabulator"),
+	TEXT("Blank"),
+	TEXT("Colon")
+};
+unsigned short TurtleCanvas::ixCSVSepa = 0;
+// END KGU 2021-04-18
 
 TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 	: pFrame(&frame)
@@ -261,6 +299,51 @@ LRESULT TurtleCanvas::CanvasWndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 }
+
+UINT_PTR TurtleCanvas::saveCSVHookProc(HWND hDlg, UINT msgId, WPARAM wParam, LPARAM lParam)
+{
+	TurtleCanvas* pInstance = getInstance();
+	HWND hFileDlg = GetParent(hDlg);
+	switch (msgId) {
+	case WM_INITDIALOG:
+	{
+		RECT rcFDialog;
+		SetDlgItemText(hDlg, 200, CSV_SEPARATOR);
+		for (unsigned short i = 0; i < N_CSV_SEPARATORS; i++) {
+			UINT idRBtn = IDC_CUST_START + i + 1;
+			HWND hBtn = GetDlgItem(hDlg, idRBtn);
+			if (hBtn != NULL) {
+				SetDlgItemText(hDlg, idRBtn, CSV_SEPARATOR_NAMES[i]);
+				if (i == ixCSVSepa) {
+					CheckDlgButton(hDlg, idRBtn, BST_CHECKED);
+				}
+			}
+		}
+	}
+		return FALSE;
+	case WM_NOTIFY:
+	{
+		OFNOTIFY* pNotify = (OFNOTIFY*)lParam;
+		UINT idFrom = pNotify->hdr.idFrom;
+		switch (pNotify->hdr.code) {
+		case CDN_FILEOK:
+			for (unsigned short i = 0; i < N_CSV_SEPARATORS; i++) {
+				if (IsDlgButtonChecked(hDlg, i + IDC_CUST_START + 1)) {
+					ixCSVSepa = i;
+				}
+			}
+			break;
+		default:
+			break;
+		}
+	}
+		return FALSE;
+
+	default:
+		return FALSE;
+	}
+}
+
 
 BOOL TurtleCanvas::CoordDialogProc(HWND hwndDlg, UINT message,
 	WPARAM wParam, LPARAM lParam)
@@ -1200,7 +1283,6 @@ BOOL TurtleCanvas::handleExportCSV(bool testOnly)
 #if DEBUG_PRINT
 	printf("handleExportCSV\n");
 #endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
 	BOOL canDo = FALSE;
 	TurtleCanvas* pInstance = getInstance();
 	for (Turtle* pTurtle : pInstance->pFrame->turtles) {
@@ -1213,14 +1295,15 @@ BOOL TurtleCanvas::handleExportCSV(bool testOnly)
 		return canDo;
 	}
 	TCHAR szFile[_MAX_PATH] = { 0 };       // The buffer for the file path
-	WORD ixNameStart = pInstance->chooseFileName(TEXT("All files\0*.*\0Comma-separated values files\0*.csv\0Text files\0*.txt\0"),
-		TEXT("csv"), szFile);
+	WORD ixNameStart = pInstance->chooseFileName(
+		TEXT("All files\0*.*\0Comma-separated values files\0*.csv\0Text files\0*.txt\0"),
+		TEXT("csv"), szFile,
+		(LPOFNHOOKPROC)saveCSVHookProc, (LPDLGTEMPLATE)&tplSaveCSV.dlt);
 	if (ixNameStart != 0xFFFFFFFF) {
 		HCURSOR oldCursor = GetCursor();
 		SetCursor(pInstance->hWait);
 		const unsigned short nCols = sizeof(CSV_COL_HEADERS) / sizeof(char*);
-		char separator = ';';	// Default separator
-		// TODO get the separator via the saveFile dialog...
+		char separator = CSV_SEPARATORS[ixCSVSepa];	// Chosen separator
 		std::ofstream ostr(szFile);
 		if (ostr.is_open()) {
 			for (unsigned short col = 0; col < nCols; col++) {
@@ -1350,9 +1433,10 @@ BOOL TurtleCanvas::handleExportSVG(bool testOnly)
 	return TRUE;
 }
 
-WORD TurtleCanvas::chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName)
+WORD TurtleCanvas::chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName,
+	LPOFNHOOKPROC lpHookProc, LPDLGTEMPLATE lpdt)
 {
-	WORD nameIndex = 0xFFFFFFFF;
+	WORD nameIndex = 0xFFFFFFFF;	// start position of the mere file name within the path
 	OPENFILENAME ofn;       // common dialog box structure
 
 	// Initialize OPENFILENAME
@@ -1368,6 +1452,14 @@ WORD TurtleCanvas::chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR file
 	ofn.lpstrInitialDir = NULL;
 	ofn.lpstrDefExt = defaultExt;
 	ofn.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT;
+	if (lpdt != NULL) {
+		ofn.Flags |= OFN_ENABLETEMPLATEHANDLE;
+		ofn.hInstance = (HINSTANCE)lpdt;	//FIXME!
+	}
+	if (lpHookProc != NULL) {
+		ofn.Flags |= OFN_ENABLEHOOK;
+		ofn.lpfnHook = lpHookProc;
+	}
 
 	if (GetSaveFileName(&ofn) == TRUE) {
 		nameIndex = ofn.nFileOffset;

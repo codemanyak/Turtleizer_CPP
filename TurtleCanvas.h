@@ -74,6 +74,8 @@ private:
 	typedef LPCSTR NameType;
 	typedef string String;
 #endif /*UNICODE*/
+	// Number of choosable CSV separator characters
+	static const unsigned short N_CSV_SEPARATORS = 5;
 	// Menudefinition structure
 	struct MenuDef {
 		LPTSTR caption;
@@ -81,13 +83,37 @@ private:
 		BOOL(*method)(bool);
 		bool isCheck;
 	};
-	// Maximum and minimum zoom factor, zoom change factor
-	static const float MAX_ZOOM, MIN_ZOOM, ZOOM_RATE;
+	// Dialog item template structure (for file dialog customisation)
+	struct TDlgItem {
+		DLGITEMTEMPLATE dli;
+		WORD class1;	// First WORD of class specification (0xFFFF)
+		WORD class2;	// Second WORD of class specification (a predefined system class ordinal)
+		WORD title;		// Set to 0 (= L""), title will be assigned dynamically
+		WORD dummy;		// Follow-up word for the empty title
+		WORD creatData;	// creation data, not used
+	};
+	// Dialog template structure (for file dialog customisation)
+	struct TDlgSaveCSV {
+		DLGTEMPLATE dlt;
+		WORD menu;
+		WORD classd;
+		WCHAR title;		// There won't be a title
+		TDlgItem fixItem;
+		TDlgItem groupItem;
+		TDlgItem radioItems[N_CSV_SEPARATORS];
+	};
+	static const UINT IDC_CUST_START = 200;		// First id for customer controls
+	static const float MAX_ZOOM, MIN_ZOOM;		// Maximum and minimum zoom factor
+	static const float ZOOM_RATE;				// Zoom change factor
 	static const NameType WCLASS_NAME;			// Name of the window class
 	static const int IDM_CONTEXT_MENU = 20000;	// Start identifier for context menu items
 	static const MenuDef MENU_DEFINITIONS[];	// Context menu specification
 	static const char* CSV_COL_HEADERS[];		// Table column headers for the CSV export
-	static const char CSV_SEPARATORS[];			// Choosable separator characters for CSV export
+	static const char CSV_SEPARATORS[N_CSV_SEPARATORS];			// Choosable separator characters for CSV export
+	static const NameType CSV_SEPARATOR_NAMES[N_CSV_SEPARATORS];// CSV separator description strings (radio button captions)
+	static const NameType CSV_SEPARATOR;		// Caption for the separator radio button group
+	static const TDlgSaveCSV tplSaveCSV;		// Custom template for the CSV SaveFile dialog
+	static unsigned short ixCSVSepa;			// Index of the CSV separator last used
 	TOOLINFO tooltipInfo;			// Tooltip info structure
 	COLORREF customColors[16];		// Cache for user background colours
 	HWND hCanvas;					// The handle of the canvas window (subwindow)
@@ -123,7 +149,8 @@ private:
 	//    and returns the index of the pure file name (without path) into the TCHAR
 	//    array filename if successful, otherwise (i.e. if the user cancels or the
 	//    call simply fails) returns 0xffffffff
-	WORD chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName);
+	WORD chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName,
+		LPOFNHOOKPROC lpHookProc = NULL, LPDLGTEMPLATE lpdt = NULL);
 	// Callback method for refresh (WM_PAINT message event)
 	VOID onPaint();
 	// Callback method for context menu event
@@ -134,6 +161,8 @@ private:
 	VOID onScrollEvent(WORD scrollFlag, WORD pos, BOOL isVertical);
 	// Callback method for mouse moving and dragging
 	VOID onMouseMove(WORD X, WORD Y, BOOL isButtonDown);
+	// Callback method for the save file dialog extension
+	static UINT_PTR saveCSVHookProc(HWND hDlg, UINT msgId, WPARAM wParam, LPARAM lParam);
 
 	// Converts a turtle rectangle into a window rectangle
 	RECT turtle2Window(const RectF& rect) const;
