@@ -18,6 +18,7 @@
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2021-04-20   CSV separator choice and coordinate input dialog implemented 
  * 2021-04-02   Scrolling, zooming, and background choice implemented
  * 2021-03-31   created for VERSION 11.0.0 (to address the scrollbar mechanism, #6)
  */
@@ -39,8 +40,6 @@ public:
 	TurtleCanvas(Turtleizer& frame, HWND hFrame);
 	~TurtleCanvas();
 	static LRESULT CALLBACK CanvasWndProc(HWND hWnd, UINT message,
-		WPARAM wParam, LPARAM lParam);
-	static BOOL CALLBACK CoordDialogProc(HWND hwndDlg, UINT message,
 		WPARAM wParam, LPARAM lParam);
 	// Redraws the turtle canvas (with nElements lines), at least in the given coord rectangle rectF
 	void redraw(const RectF& rectF, int nElements);
@@ -92,8 +91,8 @@ private:
 		WORD dummy;		// Follow-up word for the empty title
 		WORD creatData;	// creation data, not used
 	};
-	// Dialog template structure (for file dialog customisation)
-	struct TDlgSaveCSV {
+	// Dialog template structure for file dialog customisation
+	static const struct TDlgSaveCSV {
 		DLGTEMPLATE dlt;
 		WORD menu;
 		WORD classd;
@@ -101,7 +100,27 @@ private:
 		TDlgItem fixItem;
 		TDlgItem groupItem;
 		TDlgItem radioItems[N_CSV_SEPARATORS];
-	};
+	} tplSaveCSV;		// Custom template for the CSV SaveFile dialog
+	// Dialog template structure for coordinate input
+	static const struct TDlgInputCoord {
+		DLGTEMPLATE dlt;
+		WORD menu;
+		WORD classd;
+		WCHAR title;				// There won't be a title
+		TDlgItem labelItem;			// Caption
+		TDlgItem xyTextItems[2]/*[2]*/;	// label [and text items]
+		TDlgItem buttons[2];		// Okay and Cancel button
+	} tplDlgCoord;
+	// Dialog template structure for radius input
+	static const struct TDlgInputRadius {
+		DLGTEMPLATE dlt;
+		WORD menu;
+		WORD classd;
+		WCHAR title;			// There won't be a title
+		TDlgItem labelItem;		// Caption
+		TDlgItem spinnerItem;	// input item with spinner
+		TDlgItem buttons[2];		// Okay and Cancel button
+	} tplDlgRadius;
 	static const UINT IDC_CUST_START = 200;		// First id for customer controls
 	static const float MAX_ZOOM, MIN_ZOOM;		// Maximum and minimum zoom factor
 	static const float ZOOM_RATE;				// Zoom change factor
@@ -112,7 +131,6 @@ private:
 	static const char CSV_SEPARATORS[N_CSV_SEPARATORS];			// Choosable separator characters for CSV export
 	static const NameType CSV_SEPARATOR_NAMES[N_CSV_SEPARATORS];// CSV separator description strings (radio button captions)
 	static const NameType CSV_SEPARATOR;		// Caption for the separator radio button group
-	static const TDlgSaveCSV tplSaveCSV;		// Custom template for the CSV SaveFile dialog
 	static unsigned short ixCSVSepa;			// Index of the CSV separator last used
 	TOOLINFO tooltipInfo;			// Tooltip info structure
 	COLORREF customColors[16];		// Cache for user background colours
@@ -163,6 +181,12 @@ private:
 	VOID onMouseMove(WORD X, WORD Y, BOOL isButtonDown);
 	// Callback method for the save file dialog extension
 	static UINT_PTR saveCSVHookProc(HWND hDlg, UINT msgId, WPARAM wParam, LPARAM lParam);
+	// Callback method for Coordinate input dialog
+	static BOOL CALLBACK DialogCoordProc(HWND hDlg, UINT msgId, WPARAM wParam, LPARAM lParam);
+	// Callback method for Coordinate input dialog
+	static BOOL CALLBACK DialogRadiusProc(HWND hDlg, UINT msgId, WPARAM wParam, LPARAM lParam);
+	// Callback for EnumChildWindows to adjust the fonts
+	static BOOL CALLBACK AdjustChildFontProc(HWND hDlg, LPARAM lParam);
 
 	// Converts a turtle rectangle into a window rectangle
 	RECT turtle2Window(const RectF& rect) const;
@@ -191,6 +215,8 @@ private:
 	static BOOL handleExportPNG(bool testOnly);
 	static BOOL handleExportSVG(bool testOnly);
 
+	// Returns NULL if text represents an int string or the pointer to the first unexpected character
+	static TCHAR* checkIntString(LPCTSTR text);
 };
 
 #endif /*TURTLECANVAS_H*/

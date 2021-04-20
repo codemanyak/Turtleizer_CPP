@@ -18,7 +18,8 @@
  *
  * History (add on top):
  * --------------------------------------------------------
- * 2021-04-19   Separator choice for CSV export implemented
+ * 2021-04-20   Coordinate input dialog implemented (still without icon and with odd font)
+ * 2021-04-19   Separator choice for CSV export implemented (still with odd font)
  * 2021-04-07   Some revisions for redrawing and tooltip update
  * 2021-04-05   Measuring tooltip implemented.
  * 2021-04-03   SVG export implemented
@@ -43,7 +44,7 @@ const TurtleCanvas::TDlgSaveCSV TurtleCanvas::tplSaveCSV = {
 		0,
 		2 + N_CSV_SEPARATORS,
 		0, 0,		// relative horizontal and vertical position
-		75, 170	// horizontal and vertical size
+		75, 170		// horizontal and vertical size
 	},
 	0,	// no menu
 	0,	// standard dialog box class
@@ -51,17 +52,47 @@ const TurtleCanvas::TDlgSaveCSV TurtleCanvas::tplSaveCSV = {
 	// static text control for positioning
 	{{WS_CHILD | WS_VISIBLE | SS_LEFT, 0, 0, 0, 0, 150, stc32}, 0xFFFF, 0x0082, 0, 0},
 	// group box (label)
-	{{WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 0, 1, 0, 70, 20 * N_CSV_SEPARATORS, IDC_CUST_START}, 0xFFFF, 0x0080, 0, 0},
+	{{WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 0, 1, 5, 70, 15 * N_CSV_SEPARATORS + 10, IDC_CUST_START}, 0xFFFF, 0x0080, 0, 0},
 	// radio buttons
 	{
-		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON | WS_GROUP, 0, 10, 15, 50, 20, IDC_CUST_START+1}, 0xFFFF, 0x0080, 0, 0},
-		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 35, 50, 15, IDC_CUST_START+2}, 0xFFFF, 0x0080, 0, 0},
-		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 55, 50, 15, IDC_CUST_START+3}, 0xFFFF, 0x0080, 0, 0},
-		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 75, 50, 15, IDC_CUST_START+4}, 0xFFFF, 0x0080, 0, 0},
-		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 95, 50, 15, IDC_CUST_START+5}, 0xFFFF, 0x0080, 0, 0},
+		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON | WS_GROUP, 0, 10, 15, 50, 10, IDC_CUST_START+1}, 0xFFFF, 0x0080, 0, 0},
+		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 30, 50, 10, IDC_CUST_START+2}, 0xFFFF, 0x0080, 0, 0},
+		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 45, 50, 10, IDC_CUST_START+3}, 0xFFFF, 0x0080, 0, 0},
+		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 60, 50, 10, IDC_CUST_START+4}, 0xFFFF, 0x0080, 0, 0},
+		{{WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, 0, 10, 75, 50, 10, IDC_CUST_START+5}, 0xFFFF, 0x0080, 0, 0},
 	}
 };
 
+const TurtleCanvas::TDlgInputCoord TurtleCanvas::tplDlgCoord = {
+	{
+		WS_POPUP | WS_BORDER | WS_SYSMENU | DS_MODALFRAME | WS_CAPTION,
+		0,
+		/*7*/5,			// number of items to place
+		10, 10,		// Initial position
+		120, 80		// Initial size
+	},
+	0,			// no menu
+	0,			// standard dialog box class
+	0,			// no initial title
+	// Caption label (static text)
+	{{WS_CHILD | WS_VISIBLE | SS_LEFT, 0, 5, 5, 80, 10, IDC_CUST_START}, 0xFFFF, 0x0082, 0, 0},
+	// Pairs of label (static text) and text input fields FIXME the edit controls blow the DialogBoxIndirect method
+	{
+	//	{
+			{{WS_CHILD | WS_VISIBLE | SS_LEFT, 0, 10, 20, 8, 10, IDC_CUST_START + 1}, 0xFFFF, 0x0082, 0, 0},
+	//		{{WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_RIGHT, 0, 20, 20, 40, 10, IDC_CUST_START + 2}, 0xFFFF, 0x0081, 0, 0},
+	//	},
+	//	{
+			{{WS_CHILD | WS_VISIBLE | SS_LEFT, 0, 10, 35, 8, 10, IDC_CUST_START + 3}, 0xFFFF, 0x0082, 0, 0},
+	//		{{WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_RIGHT, 0, 20, 35, 40, 10, IDC_CUST_START + 4}, 0xFFFF, 0x0081, 0, 0}
+	//	}
+	},
+	// OK and Cancel button
+	{
+		{{WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, 0, 20, 50, 40, 15, IDOK    }, 0xFFFF, 0x0080, 0, 0},
+		{{WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, 0, 65, 50, 40, 15, IDCANCEL}, 0xFFFF, 0x0080, 0, 0}
+	}
+};
 
 // START KGU 2021-03-28: Enhancements for #6
 const float TurtleCanvas::MAX_ZOOM = 2.0f;
@@ -138,13 +169,13 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 	, hdcScrCompat(NULL)
 	, hBmpCompat(NULL)
 	, tooltipInfo{ 0 }
-	, snapLines(true) 
+	, snapLines(true)
 	, snapRadius(5.0f)
 	, popupCoords(true)
 	, showAxes(false)
 	, zoomFactor(1.0)
 	, autoUpdate(true)
-	, scrollPos{0, 0}
+	, scrollPos{ 0, 0 }
 	, pDragStart(NULL)
 	, mouseCoord(0, 0)
 	, tracksMouse(false)
@@ -344,31 +375,123 @@ UINT_PTR TurtleCanvas::saveCSVHookProc(HWND hDlg, UINT msgId, WPARAM wParam, LPA
 	}
 }
 
-
-BOOL TurtleCanvas::CoordDialogProc(HWND hwndDlg, UINT message,
-	WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK TurtleCanvas::DialogCoordProc(HWND hDlg, UINT msgId, WPARAM wParam, LPARAM lParam)
 {
-	// TODO
-	const int txtLen = 80;
-	TCHAR szCoord[txtLen]; // receives Coordinates.
-
-	switch (message)
+	TurtleCanvas* pInstance = getInstance();
+	switch (msgId) {
+	case WM_INITDIALOG:
 	{
+		SetWindowText(hDlg, TEXT("Scroll to coordinate ..."));
+		SetDlgItemText(hDlg, IDC_CUST_START, TEXT("Target coordinate:"));
+		SetDlgItemText(hDlg, IDC_CUST_START + 1, TEXT("x"));
+		SetDlgItemText(hDlg, IDC_CUST_START + 3, TEXT("y"));
+		SetDlgItemText(hDlg, IDOK, TEXT("OK"));
+		SetDlgItemText(hDlg, IDCANCEL, TEXT("Cancel"));
+		HWND hEditX = NULL;
+		// This is a workaround for the crash on Edit items in the dialog template
+		for (int i = 0; i < 2; i++) {
+			RECT rcItem;
+			HWND hLabel = GetDlgItem(hDlg, IDC_CUST_START + 1 + 2 * i);
+			GetWindowRect(hLabel, &rcItem);
+			POINT topLeft = { rcItem.left, rcItem.top };
+			ScreenToClient(hDlg, &topLeft);
+			int factorX = (rcItem.right - rcItem.left) / 8;
+			HWND hItem = CreateWindow(TEXT("EDIT"), NULL,
+				// Style ES_NUMBER does not allow signs to be entered, so must configure a custom check
+				WS_BORDER | WS_VISIBLE | WS_CHILD | WS_TABSTOP | /*ES_NUMBER |*/ ES_RIGHT,
+				factorX * 20, topLeft.y, 40 * factorX, rcItem.bottom - rcItem.top,
+				hDlg, HMENU( IDC_CUST_START + 2 + i * 2 ),
+				getInstance()->hInstance, NULL);
+			if (i == 0 && hItem != NULL) {
+				hEditX = hItem;	// For setting the focus before returning
+			}
+		}
+		///* This hint to achieve the actual standard GUI font was taken from
+		// * https://stackoverflow.com/questions/35415636/win32-using-the-default-button-font-in-a-button
+		// * Unfortunately, it doesn't yield a different result from not setting the font at all
+		// */
+		//NONCLIENTMETRICS metrics = {};
+		//metrics.cbSize = sizeof(metrics);
+		//SystemParametersInfo(SPI_GETNONCLIENTMETRICS, metrics.cbSize, &metrics, 0);
+		//HFONT guiFont = CreateFontIndirect(&metrics.lfCaptionFont);
+		//EnumChildWindows(hDlg, AdjustChildFontProc, LPARAM(guiFont));
+		//DeleteObject(guiFont);
+		if (hEditX != NULL) {
+			SetFocus(hEditX);
+			return FALSE;
+		}
+	}
+		return TRUE;
 	case WM_COMMAND:
-		switch (LOWORD(wParam))
-		{
+		switch (LOWORD(wParam)) {
 		case IDOK:
-			if (!GetDlgItemTextW(hwndDlg, 17, szCoord, txtLen))
-				*szCoord = 0;
-
-			// Fall through. 
-
+		{
+			BOOL isOk = TRUE;
+			int coord[2] = { (int)pInstance->mouseCoord.X, (int)pInstance->mouseCoord.Y };
+			for (int i = 0; i < 2; i++) {
+				// Against the description, the argument gets non-zero if the conversion was successful
+				coord[i] = GetDlgItemInt(hDlg, IDC_CUST_START + 2 + 2 * i, &isOk, TRUE);
+				if (!isOk) {
+					TCHAR text[40];
+					GetDlgItemText(hDlg, IDC_CUST_START + 2 + 2 * i, text, 40);
+					TCHAR message[256];
+#ifdef UNICODE
+					wsprintf(
+#else
+					sprintf(
+#endif /*UNICODE*/
+						message, TEXT("'%s' is not a valid %c coordinate!"), text, i == 0 ? TEXT('x') : TEXT('y')
+					);
+					MessageBox(hDlg, message, TEXT("Input error"), MB_ICONERROR);
+					return TRUE;
+				}
+			}
+			pInstance->scrollToCoord(PointF(coord[0], coord[1]));
+			pInstance->adjustScrollbars();
+			pInstance->redraw(pInstance->autoUpdate);
+		}
+		// Fall through
 		case IDCANCEL:
-			EndDialog(hwndDlg, wParam);
+			EndDialog(hDlg, wParam);
 			return TRUE;
+		case IDC_CUST_START + 2:
+		case IDC_CUST_START + 4:
+			// This is one of the edit controls
+			if (HIWORD(wParam) == EN_UPDATE/* || HIWORD(wParam) == EN_CHANGE*/)
+			{
+				const int TEXTSIZE = 40;
+				TCHAR text[TEXTSIZE];
+				GetDlgItemText(hDlg, LOWORD(wParam), text, TEXTSIZE);
+				TCHAR* pError = checkIntString(text);
+				if (pError != NULL) {
+					HWND hEdit = GetDlgItem(hDlg, LOWORD(wParam));
+					// FIXME to use Edit_Undo causes a stack overflow here
+					//if (Edit_CanUndo(hEdit)) {
+					//	Edit_Undo(hEdit);
+					//}
+					EDITBALLOONTIP blnTip = {
+						sizeof(EDITBALLOONTIP),
+						TEXT("Syntax error"),
+						TEXT("No integer value!"),
+						TTI_ERROR
+					};
+					Edit_ShowBalloonTip(hEdit, &blnTip);
+				}
+				return TRUE;
+			}
+			return FALSE;
+		default:
+			return FALSE;
 		}
 	}
 	return FALSE;
+}
+
+BOOL CALLBACK TurtleCanvas::AdjustChildFontProc(HWND hWnd, LPARAM lParam)
+{
+	HFONT hfDefault = (HFONT)lParam;
+	SendMessage(hWnd, WM_SETFONT, (WPARAM)hfDefault, MAKELPARAM(TRUE, 0));
+	return TRUE;
 }
 
 void TurtleCanvas::redraw(const RectF& rectF, int nElements)
@@ -1003,27 +1126,20 @@ BOOL TurtleCanvas::handleGotoCoord(bool testOnly)
 	printf("handleGotoCoord\n");
 #endif /*DEBUG_PRINT*/
 	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
+	BOOL canDo = TRUE;
 	if (!canDo || testOnly) {
 		return canDo;
 	}
-	// TODO: Open an dialog to ask for the coordinates
-	//if (DialogBox(this->hInstance,
-	//	TEXT(""),
-	//	this->hCanvas,
-	//	(DLGPROC)CoordDialogProc) == IDOK)
-	//{
-	//	// Complete the command; szItemName contains the 
-	//	// name of the item to delete. 
-	//}
-
-	//else
-	//{
-	//	// Cancel the command. 
-	//}
-	// START KGU 2021-03-31: Enh. #6
-	getInstance()->adjustScrollbars();
-	// END KGU 2021-03-31
+	// Open a dialog to ask for the coordinates
+	// START KGU 2021-04-20: Enh. #6
+	TurtleCanvas* pInstance = getInstance();
+	DialogBoxIndirect(
+		pInstance->hInstance,
+		(LPDLGTEMPLATE)&tplDlgCoord.dlt,
+		pInstance->hCanvas,
+		(DLGPROC)DialogCoordProc);
+	// (The remaining actions happen in DialogCoordProc)
+	// END KGU 2021-04-20
 	return TRUE;
 }
 
@@ -1431,6 +1547,33 @@ BOOL TurtleCanvas::handleExportSVG(bool testOnly)
 
 	}
 	return TRUE;
+}
+
+TCHAR* TurtleCanvas::checkIntString(LPCTSTR text)
+{
+	bool isEmpty = true;
+	TCHAR* pError = NULL;
+	for (TCHAR* pChar = (TCHAR*)text; *pChar != TEXT('\0'); pChar++) {
+		if (*pChar == TEXT(' ')) {
+			if (isEmpty) {
+				continue;
+			}
+			pError = pChar;
+			break;
+		}
+		else if (*pChar == TEXT('-')) {
+			if (!isEmpty) {
+				pError = pChar;
+				break;
+			}
+		}
+		else if (*pChar < TEXT('0') || *pChar > TEXT('9')) {
+			pError = pChar;
+			break;
+		}
+		isEmpty = false;
+	}
+	return pError;
 }
 
 WORD TurtleCanvas::chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName,
