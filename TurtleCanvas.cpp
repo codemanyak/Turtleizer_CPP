@@ -18,6 +18,7 @@
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2021-04-21   Snap radius dialog implemented
  * 2021-04-20   Coordinate input dialog implemented (still without icon and with odd font)
  * 2021-04-19   Separator choice for CSV export implemented (still with odd font)
  * 2021-04-07   Some revisions for redrawing and tooltip update
@@ -91,6 +92,26 @@ const TurtleCanvas::TDlgInputCoord TurtleCanvas::tplDlgCoord = {
 	{
 		{{WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, 0, 20, 50, 40, 15, IDOK    }, 0xFFFF, 0x0080, 0, 0},
 		{{WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, 0, 65, 50, 40, 15, IDCANCEL}, 0xFFFF, 0x0080, 0, 0}
+	}
+};
+
+const TurtleCanvas::TDlgInputRadius TurtleCanvas::tplDlgRadius = {
+	{
+		WS_POPUP | WS_BORDER | WS_SYSMENU | DS_MODALFRAME | WS_CAPTION,
+		0,
+		3,			// number of items to place
+		10, 10,		// Initial position
+		150, 80		// Initial size
+	},
+	0,			// no menu
+	0,			// standard dialog box class
+	0,			// no initial title
+	// Caption label (static text)
+	{{WS_CHILD | WS_VISIBLE | SS_LEFT, 0, 5, 5, 80, 10, IDC_CUST_START}, 0xFFFF, 0x0082, 0, 0},
+	// OK and Cancel button
+	{
+		{{WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, 0, 20, 20, 40, 15, IDOK    }, 0xFFFF, 0x0080, 0, 0},
+		{{WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, 0, 65, 20, 40, 15, IDCANCEL}, 0xFFFF, 0x0080, 0, 0}
 	}
 };
 
@@ -395,7 +416,7 @@ BOOL CALLBACK TurtleCanvas::DialogCoordProc(HWND hDlg, UINT msgId, WPARAM wParam
 			GetWindowRect(hLabel, &rcItem);
 			POINT topLeft = { rcItem.left, rcItem.top };
 			ScreenToClient(hDlg, &topLeft);
-			int factorX = (rcItem.right - rcItem.left) / 8;
+			int factorX = (rcItem.right - rcItem.left) / tplDlgCoord.xyTextItems[i].dli.cx;
 			HWND hItem = CreateWindow(TEXT("EDIT"), NULL,
 				// Style ES_NUMBER does not allow signs to be entered, so must configure a custom check
 				WS_BORDER | WS_VISIBLE | WS_CHILD | WS_TABSTOP | /*ES_NUMBER |*/ ES_RIGHT,
@@ -480,6 +501,114 @@ BOOL CALLBACK TurtleCanvas::DialogCoordProc(HWND hDlg, UINT msgId, WPARAM wParam
 				return TRUE;
 			}
 			return FALSE;
+		default:
+			return FALSE;
+		}
+	}
+	return FALSE;
+}
+
+BOOL CALLBACK TurtleCanvas::DialogRadiusProc(HWND hDlg, UINT msgId, WPARAM wParam, LPARAM lParam)
+{
+	TurtleCanvas* pInstance = getInstance();
+	switch (msgId) {
+	case WM_INITDIALOG:
+	{
+		SetWindowText(hDlg, TEXT("Set measuring snap radius ..."));
+		SetDlgItemText(hDlg, IDC_CUST_START, TEXT("Measuring snap radius:"));
+		SetDlgItemText(hDlg, IDOK, TEXT("OK"));
+		SetDlgItemText(hDlg, IDCANCEL, TEXT("Cancel"));
+		// This is a workaround for the crash on Edit items in the dialog template
+		RECT rcClient;
+		GetClientRect(hDlg, &rcClient);
+		RECT rcLabel;
+		GetWindowRect(GetDlgItem(hDlg, IDC_CUST_START), &rcLabel);
+		POINT topLeft = { rcLabel.left, rcLabel.top };
+		ScreenToClient(hDlg, &topLeft);
+		int factorX = (rcLabel.right - rcLabel.left) / tplDlgRadius.labelItem.dli.cx;
+		// Create a buddy window (an Edit control).
+		HWND hEdtBuddy = CreateWindowExW(
+			WS_EX_LEFT | WS_EX_CLIENTEDGE | WS_EX_CONTEXTHELP,    //Extended window styles.
+			TEXT("EDIT"),
+			NULL,
+			WS_CHILDWINDOW | WS_VISIBLE | WS_BORDER		// Window styles.
+			| ES_NUMBER | ES_RIGHT,						// Edit control styles.
+			rcLabel.right - rcLabel.left + 10, topLeft.y-2,
+			factorX * 40, rcLabel.bottom - rcLabel.top + 3,
+			hDlg,
+			(HMENU)(IDC_CUST_START + 1),
+			pInstance->hInstance,
+			NULL);
+		// Create the Up-Down control (spinner).
+		HWND hUpDnCtl = CreateWindowExW(
+			WS_EX_LEFT | WS_EX_LTRREADING,
+			UPDOWN_CLASS,
+			NULL,
+			WS_CHILDWINDOW | WS_VISIBLE
+			| UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_HOTTRACK,
+			0, 0,
+			0, 0,         // Set to zero to automatically size to fit the buddy window.
+			hDlg,
+			NULL,
+			pInstance->hInstance,
+			NULL);
+		// Set direction and range.
+		SendMessage(hUpDnCtl, UDM_SETRANGE, 0, MAKELPARAM(100, 5));
+		// Explicitly attach the Updown control to its 'buddy' edit control
+		SendMessage(hUpDnCtl, UDM_SETBUDDY, (WPARAM)hEdtBuddy, 0);
+		TCHAR lpstrRadius[20];
+#ifdef UNICODE
+		wsprintf(
+#elif
+		sprintf(
+#endif /*UNICODE*/
+			lpstrRadius, TEXT("%d"), (int)pInstance->snapRadius
+		);
+		Edit_SetText(hEdtBuddy, lpstrRadius);    // Sets the current radius string
+
+		///* This hint to achieve the actual standard GUI font was taken from
+		// * https://stackoverflow.com/questions/35415636/win32-using-the-default-button-font-in-a-button
+		// * Unfortunately, it doesn't yield a different result from not setting the font at all
+		// */
+		//NONCLIENTMETRICS metrics = {};
+		//metrics.cbSize = sizeof(metrics);
+		//SystemParametersInfo(SPI_GETNONCLIENTMETRICS, metrics.cbSize, &metrics, 0);
+		//HFONT guiFont = CreateFontIndirect(&metrics.lfCaptionFont);
+		//EnumChildWindows(hDlg, AdjustChildFontProc, LPARAM(guiFont));
+		//DeleteObject(guiFont);
+		if (hEdtBuddy != NULL) {
+			SetFocus(hEdtBuddy);
+			return FALSE;
+		}
+	}
+	return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDOK:
+		{
+			BOOL isOk = TRUE;
+			// Against the description, the argument gets non-zero if the conversion was successful
+			int radius = GetDlgItemInt(hDlg, IDC_CUST_START + 1, &isOk, TRUE);
+			if (!isOk) {
+				TCHAR text[40];
+				GetDlgItemText(hDlg, IDC_CUST_START + 1, text, 40);
+				TCHAR message[256];
+#ifdef UNICODE
+				wsprintf(
+#else
+				sprintf(
+#endif /*UNICODE*/
+					message, TEXT("'%s' is not a valid snap radius!"), text
+				);
+				MessageBox(hDlg, message, TEXT("Input error"), MB_ICONERROR);
+				return TRUE;
+			}
+			pInstance->snapRadius = radius;
+		}
+		// Fall through
+		case IDCANCEL:
+			EndDialog(hDlg, wParam);
+			return TRUE;
 		default:
 			return FALSE;
 		}
@@ -1371,12 +1500,20 @@ BOOL TurtleCanvas::handleToggleSnap(bool testOnly)
 BOOL TurtleCanvas::handleSetSnapRadius(bool testOnly)
 {
 	//printf("handleSnapRadius\n");
-	// TODO change this when the dialog is implemented
-	BOOL canDo = FALSE;
+	BOOL canDo = TRUE;
 	if (!canDo || testOnly) {
 		return canDo;
 	}
-	// TODO
+	// Open the radius input dialog
+	// START KGU 2021-04-21: Enh. #6
+	TurtleCanvas* pInstance = getInstance();
+	DialogBoxIndirect(
+		pInstance->hInstance,
+		(LPDLGTEMPLATE)&tplDlgRadius.dlt,
+		pInstance->hCanvas,
+		(DLGPROC)DialogRadiusProc);
+	// (The remaining actions happen in DialogCoordProc)
+	// END KGU 2021-04-21
 	return TRUE;
 }
 

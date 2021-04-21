@@ -116,9 +116,9 @@ private:
 		DLGTEMPLATE dlt;
 		WORD menu;
 		WORD classd;
-		WCHAR title;			// There won't be a title
-		TDlgItem labelItem;		// Caption
-		TDlgItem spinnerItem;	// input item with spinner
+		WCHAR title;				// There won't be a title
+		TDlgItem labelItem;			// Caption
+		//TDlgItem spinnerItem;		// input item with spinner (will be added dynamically)
 		TDlgItem buttons[2];		// Okay and Cancel button
 	} tplDlgRadius;
 	static const UINT IDC_CUST_START = 200;		// First id for customer controls

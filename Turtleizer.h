@@ -80,7 +80,7 @@
  *
  * History (add at top):
  * --------------------------------------------------------
- * 2021-04-05   VERSION 11.0.0: GUI extensions according to #6 (~ Structorizer 3.31)
+ * 2021-04-21   VERSION 11.0.0: GUI extensions according to #6 (~ Structorizer 3.31)
  * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
  * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
  * 2018-10-09   New turtle symbol according to Structorizer versions >= 3.28
