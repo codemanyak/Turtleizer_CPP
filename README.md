@@ -87,6 +87,8 @@ This wipes the traces of the turtles, including the additional ones if the argum
 ## GUI functions
 Since version 11.0.0, the Turtleizer window offers enhanced GUI functionality in analogy to [Structorizer](https://structorizer.fisch.lu) versions ≥ 3.31. They comprise scrollbars, zooming support, mouse measuring, a status bar, a tooltip, and a context menu.
 
+![grafik](https://user-images.githubusercontent.com/15326471/115716180-34f87300-a379-11eb-8456-f1ae80ef8d32.png)
+
 ### Status bar (all coordinate values in turtle units)
 The status bar information consists of (from left to right):
 - Home position (x, y) of the standard turtle;
@@ -97,43 +99,43 @@ The status bar information consists of (from left to right):
 - The snap mode (either + → / on snapping to lines or + → ▪ on snapping to points only).
 
 ### Zooming support
-- Numpad+, Ctrl-Numpad+, or mouse wheel up zoom in;
-- Numpad-, Ctrl-Numpad-, or mouse wheel down zoom out;
-- '1' resets the zoom factor to 100 %;
-- 'Z' zooms to the united drawing bounds of all turtles.
+- Numpad-`+` or Ctrl-Numpad-`+` zoom in;
+- Numpad-`-` or Ctrl-Numpad-`-` zoom out;
+- `1` resets the zoom factor to 100 %;
+- `Z` zooms to the united drawing bounds of all turtles.
 
 ### Measuring support
 - On moving the mouse over the turtle canvas, the current coordinates (in turtle units) are displayed in a tooltip (unless disabled);
-- 'C' switches the coordinate tooltip on or off;
+- `C` switches the coordinate tooltip on or off;
 - On dragging the mouse with left key pressed down, a dashed measuring line from the starting point will follow the mouse and a tooltip continuously shows the length, the coordinate differences (deltaX, deltaY), and the orientation of the line between starting and current point (in turtle units);
 - According to the snap configuration the end point of the measuring line will snap to (i.e. caught by) the nearest point on or at the start or end of a line within the snap radius;
-- 'L' toggles the snap mode between nearest point on a line (+ → /) and nearest start/end/bend point (+ → ▪);
-- 'R' allows to adapt the snapping radius (default is 5 turtle units).
+- `L` toggles the snap mode between nearest point on a line (+ → /) and nearest start/end/bend point (+ → ▪);
+- `R` allows to adapt the snapping radius (default is 5 turtle units).
 
 ### Context menu (and accelerator keys)
 The context menu offers several navigation (scolling), zooming, visibility, and export functions or options:
 - Scrolling
-  - 'G':  **Scroll to coordinate** ... → allows to input a turtle coordinate and scrolls to that position (or the nearest position within he canvas range if outside);
-  - End:  **Scroll to turtle position** → scrolls to the current position of the standard turtle;
-  - Pos1: **Scroll to home position** → scrolls to the initial (home) position of the standard turtle;
-  - '0':  **Scroll to origin (0,0)** → scrolls to the turtle coordinate origin, i.e. coordinate (0,0);
+  - `G`:  **Scroll to coordinate** ... → allows to input a turtle coordinate and scrolls to that position (or the nearest position within he canvas range if outside);
+  - `End`:  **Scroll to turtle position** → scrolls to the current position of the standard turtle;
+  - `Pos1`: **Scroll to home position** → scrolls to the initial (home) position of the standard turtle;
+  - `0`:  **Scroll to origin (0,0)** → scrolls to the turtle coordinate origin, i.e. coordinate (0,0);
 - Zooming
-  - '1':  **Reset zoom to 100%** → Resets the zoom factor such that a turtle unit equals one screen pixel again;
-  - 'Z':  **Zoom to the bounds** → Zooms out (or in) such that the entire reachable drawing fills the Turtleizer canvas (unless zoom factor limits would be exceded);
+  - `1`:  **Reset zoom to 100%** → Resets the zoom factor such that a turtle unit equals one screen pixel again;
+  - `Z`:  **Zoom to the bounds** → Zooms out (or in) such that the entire reachable drawing fills the Turtleizer canvas (unless zoom factor limits would be exceded);
 - Visibility
-  - 'A':  **Make all drawing visible** → Transforms the drawing such that parts of the drawing with negative turtle coordinates get visible, i.e. become reachable for zooming and scrolling;
-  - 'O':  **Show axes of coordinates** → If enabled, a cross of dashed lines will be drawn through the turtl coordinate origin (only visible if drawing parts in negative quadrants were made visible, see 'A' above);
-  - 'T':  **Show turtle** → Toggles the visibility of the standard turtle (corresponds to turtle commands `hideTurtle()` and `showTurtle()`, respectively);
-  - 'B':  **Set background colour ...** → Opens a colour dialog allowing to change the turtle canvas background (corresponds to turtle command `setBackground(r,g,b)`);
-  - 'S':  **Show statusbar** → Shows/hides the statusbar (to hide it may accelerate drawing and enlarges the scroll viewport);
-  - 'C':  **Pop up coordinates** → Enables or disables the tooltip that displays the turtle coordnate at the current mouse position (while dragging, the measuring tooltip will be shown no matter whether this option is on or off);
-  - 'L':  **Snap to lines (else: points only)** → Toggles between the two snapping modes (either to any point along the nearest line or to start and end points only);
-  - 'R':  **Set measuring snap radius** → Opens an input dialog with spinner to modify the snp radius for measuring;
-  - 'U':  **Update on every turtle action** → Forces the turtle to invalidate the screen after every single drawing activity (otherwise some refresh steps are omitted with the growing number of lines to be redrawn in order to improve responsivity);
+  - `A`:  **Make all drawing visible** → Transforms the drawing such that parts of the drawing with negative turtle coordinates get visible, i.e. become reachable for zooming and scrolling;
+  - `O`:  **Show axes of coordinates** → If enabled, a cross of dashed lines will be drawn through the turtl coordinate origin (only visible if drawing parts in negative quadrants were made visible, see 'A' above);
+  - `T`:  **Show turtle** → Toggles the visibility of the standard turtle (corresponds to turtle commands `hideTurtle()` and `showTurtle()`, respectively);
+  - `B`:  **Set background colour ...** → Opens a colour dialog allowing to change the turtle canvas background (corresponds to turtle command `setBackground(r,g,b)`);
+  - `S`:  **Show statusbar** → Shows/hides the statusbar (to hide it may accelerate drawing and enlarges the scroll viewport);
+  - `C`:  **Pop up coordinates** → Enables or disables the tooltip that displays the turtle coordnate at the current mouse position (while dragging, the measuring tooltip will be shown no matter whether this option is on or off);
+  - `L`:  **Snap to lines (else: points only)** → Toggles between the two snapping modes (either to any point along the nearest line or to start and end points only);
+  - `R`:  **Set measuring snap radius** → Opens an input dialog with spinner to modify the snp radius for measuring;
+  - `U`:  **Update on every turtle action** → Forces the turtle to invalidate the screen after every single drawing activity (otherwise some refresh steps are omitted with the growing number of lines to be redrawn in order to improve responsivity);
 - Graphics export
-  - 'X':  **Export drawing items as CSV ...** → Saves the triples of start point, end point, and colour for all drawn lines of all turtles into a comma-separated values files (the column separator can be chosen);
-  - Ctr-'S': **Export drawing as PNG ...** → Saves the drawing as PNG file;
-  - 'V':  **Export drawing as SVG ...** → Saves the drawing as SVG vecor graphics file.
+  - `X`:  **Export drawing items as CSV ...** → Saves the triples of start point, end point, and colour for all drawn lines of all turtles into a comma-separated values files (the column separator can be chosen);
+  - Ctrl-`S`: **Export drawing as PNG ...** → Saves the drawing as PNG file;
+  - `V`:  **Export drawing as SVG ...** → Saves the drawing as SVG vecor graphics file.
 
 ## License remarks
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or any later version.
