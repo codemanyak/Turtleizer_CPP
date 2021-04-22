@@ -80,11 +80,13 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ImageEncoders.cpp" />
     <ClCompile Include="Turtle.cpp" />
     <ClCompile Include="TurtleCanvas.cpp" />
     <ClCompile Include="Turtleizer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ImageEncoders.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Turtle.h" />
     <ClInclude Include="TurtleCanvas.h" />

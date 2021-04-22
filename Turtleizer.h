@@ -5,11 +5,11 @@
 /*
  * Fachhochschule Erfurt https://ai.fh-erfurt.de
  * Fachrichtung Angewandte Informatik
- * Module: Programming
+ * Project: Turtleizer_CPP (static C++ library for Windows)
  *
  * Object class approximately emulating the Turtleizer component of Structorizer
- * (http://structorizer.fisch.lu) for a simple C++  environment
- * Theme: Prep course Programming
+ * (http://structorizer.fisch.lu) for a simple C++ environment on Windows (WinAPI)
+ *
  * Author: Kay Gürtzig
  * Version: 11.0.0
  *

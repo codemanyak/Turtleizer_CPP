@@ -4,15 +4,14 @@
 /*
  * Fachhochschule Erfurt https://ai.fh-erfurt.de
  * Fachrichtung Angewandte Informatik
- * Module: Programming
+ * Project: Turtleizer_CPP (static C++ library for Windows)
  *
- * Object class, representing one (of potentially many) Turtles withing the
+ * Object class, representing one Turtle (of potentially many) within the
  * simple C++ emulation of the Turtleizer module coming with Structorizer
  * (http://structorizer.fisch.lu).
  * The intention is that several separately controllable (and subclassible)
  * Turtle objects may be created to share the drawing area.
  *
- * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
  * Version: 11.0.0 (covering capabilities of Structorizer 3.31, functional GUI)
  *

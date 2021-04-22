@@ -4,7 +4,7 @@
 /*
  * Fachhochschule Erfurt https://ai.fh-erfurt.de
  * Fachrichtung Angewandte Informatik
- * Module: Programming
+ * Project: Turtleizer_CPP (static C++ library for Windows)
  *
  * Object class, representing one (of potentially many) Turtles withing the
  * simple C++ emulation of the Turtleizer module coming with Structorizer
@@ -12,9 +12,8 @@
  * The intention is that several separately controllable (and subclassible)
  * Turtle objects may be created to share the drawing area.
  *
- * Theme: Prep course Programming Fundamentals / Object-oriented Programming
  * Author: Kay Gürtzig
- * Version: 11.0.0 (covering capabilities of Structorizer 3.30-12, functional GUI)
+ * Version: 11.0.0 (covering capabilities of Structorizer 3.31, functional GUI)
  *
  * History (add on top):
  * --------------------------------------------------------
@@ -36,6 +35,7 @@
 #include <cmath>
 #include <fstream>
 #include <windowsx.h>
+#include "ImageEncoders.h"
 
 const TurtleCanvas::NameType TurtleCanvas::WCLASS_NAME = TEXT("TurtleCanvas");
 
@@ -559,7 +559,7 @@ BOOL CALLBACK TurtleCanvas::DialogRadiusProc(HWND hDlg, UINT msgId, WPARAM wPara
 		TCHAR lpstrRadius[20];
 #ifdef UNICODE
 		wsprintf(
-#elif
+#else
 		sprintf(
 #endif /*UNICODE*/
 			lpstrRadius, TEXT("%d"), (int)pInstance->snapRadius
@@ -816,9 +816,8 @@ VOID TurtleCanvas::onPaint()
 	
 	Graphics graphics(hdc);
 #if DEBUG_PRINT
-	printf("executing onPaint on window %x\n", this->hWnd);	// DEBUG
+	//printf("executing onPaint on window %x\n", (unsigned int)this->hCanvas);	// DEBUG
 #endif /*DEBUG_PRINT*/
-
 
 	if (mustRedraw && this->hdcScrCompat != NULL) {
 		DeleteDC(this->hdcScrCompat);
@@ -1596,12 +1595,92 @@ BOOL TurtleCanvas::handleExportPNG(bool testOnly)
 #if DEBUG_PRINT
 	printf("handleExportPNG\n");
 #endif /*DEBUG_PRINT*/
-	// TODO change this when the dialog is implemented
 	BOOL canDo = FALSE;
+	TurtleCanvas* pInstance = getInstance();
+	for (Turtle* pTurtle : pInstance->pFrame->turtles) {
+		if (pTurtle->hasElements()) {
+			canDo = TRUE;
+			break;
+		}
+	}
 	if (!canDo || testOnly) {
 		return canDo;
 	}
-	// TODO
+	TCHAR szFile[_MAX_PATH] = { 0 };       // The buffer for the file path
+	RectF bounds = pInstance->pFrame->getBounds();
+	WORD ixNameStart = pInstance->chooseFileName(TEXT("All files\0*.*\0PNG files\0*.PNG\0"),
+		TEXT("png"), szFile);
+	if (ixNameStart != 0xFFFFFFFF) {
+		HCURSOR oldCursor = GetCursor();
+		SetCursor(pInstance->hWait);
+		// TODO
+		Graphics * pGraphics = Graphics::FromHWND(pInstance->hCanvas, FALSE);
+		if (pGraphics != NULL) {
+			Turtleizer* pFrame = pInstance->pFrame;
+			HDC hdc = pGraphics->GetHDC();
+			HDC hdcc = CreateCompatibleDC(hdc);
+			BITMAP bmp;
+			bmp.bmBitsPixel = (BYTE)GetDeviceCaps(hdc, BITSPIXEL);
+			bmp.bmPlanes = (BYTE)GetDeviceCaps(hdc, PLANES);
+			RectF bounds = pFrame->getBounds();
+			bmp.bmWidth = bounds.Width;
+			bmp.bmHeight = bounds.Height;
+
+			// The width must be byte-aligned. 
+			bmp.bmWidthBytes = ((bmp.bmWidth + 15) & ~15) / 8;
+
+			// Create a bitmap for the compatible DC. 
+			HBITMAP hBmp = CreateBitmap(bmp.bmWidth, bmp.bmHeight,
+				bmp.bmPlanes, bmp.bmBitsPixel, (CONST VOID*) NULL);
+
+			// Select the bitmap for the compatible DC. 
+			SelectObject(hdcc, hBmp);
+			// Now derive a new graphics object for the bitmap
+			Graphics grCompat(hdcc);
+			grCompat.Clear(pFrame->backgroundColour);
+			grCompat.TranslateTransform(-bounds.X, -bounds.Y);
+
+			// Draw / update the recorded lines (without the turtle images temselves)
+			for (Turtleizer::Turtles::const_iterator it(pFrame->turtles.begin()); it != pFrame->turtles.end(); ++it) {
+				(*it)->draw(grCompat, true, false);
+			}
+			// Draw the axes if switched on
+			if (pInstance->showAxes) {
+				Pen pen(Color(0xff, 0xcc, 0xcc), 1);
+				REAL dashPattern[] = { 2.0f, 2.0f };
+				pen.SetDashPattern(dashPattern, 2);
+				grCompat.DrawLine(&pen, (int)bounds.X, 0, (int)(bounds.X + bounds.Width), 0);
+				grCompat.DrawLine(&pen, 0, (int)bounds.Y, 0, (int)(bounds.Y + bounds.Height));
+			}
+			// Draw the turtle icons at last
+			for (Turtleizer::Turtles::const_iterator it(pFrame->turtles.begin()); it != pFrame->turtles.end(); ++it)
+			{
+				(*it)->drawImage(grCompat);
+			}
+			
+			Bitmap* pBmp = Bitmap::FromHBITMAP(hBmp, NULL);
+			if (!ImageEncoders::Save(pBmp, szFile)) {
+				MessageBox(
+					pInstance->hFrame,
+					TEXT("PNG export failed: Codec may be missing."),
+					TEXT("Export failed"),
+					MB_ICONERROR | MB_OK
+				);
+			}
+
+			delete pBmp;
+			delete pGraphics;
+		}
+		SetCursor(oldCursor);
+	}
+	else {
+		MessageBox(
+			pInstance->hFrame,
+			TEXT("No PNG export was done."),
+			TEXT("Export canceled"),
+			MB_ICONERROR | MB_OK
+		);
+	}
 	return TRUE;
 }
 
@@ -1681,8 +1760,8 @@ BOOL TurtleCanvas::handleExportSVG(bool testOnly)
 			TEXT("Export canceled"),
 			MB_ICONERROR | MB_OK
 		);
-
 	}
+
 	return TRUE;
 }
 

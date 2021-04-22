@@ -4,12 +4,12 @@
 /*
  * Fachhochschule Erfurt https://ai.fh-erfurt.de
  * Fachrichtung Angewandte Informatik
- * Module: Programming
- * Theme: Prep course Programming
+ * Project: Turtleizer_CPP (static C++ library for Windows)
+ *
  * Author: Kay Gürtzig
  *
  * The automatic update of the drawing area is initially done after each drawing step,
- * but then be done ever less frequently with the growing number of elements (traces)
+ * but will then be done ever less frequently with the growing number of elements (traces)
  * to be rendered.
  * By invoking updateWindow(false) the regular update may be suppressed entirely. By
  * using updateWindow(true) you may re-enable the regular update.
