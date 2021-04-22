@@ -110,7 +110,7 @@ The status bar information consists of (from left to right):
 - 'L' toggles the snap mode between nearest point on a line (+ → /) and nearest start/end/bend point (+ → ▪);
 - 'R' allows to adapt the snapping radius (default is 5 turtle units).
 
-## Context menu (and accelerator keys)
+### Context menu (and accelerator keys)
 The context menu offers several navigation (scolling), zooming, visibility, and export functions or options:
 - Scrolling
   - 'G':  **Scroll to coordinate** ... → allows to input a turtle coordinate and scrolls to that position (or the nearest position within he canvas range if outside);
