@@ -96,7 +96,7 @@ The status bar information consists of (from left to right):
 - Extension (maxX x maxY) of the (reachable part of) the drawings of all turtles (the reachable part is all that is positioned beneath and right of the top-left window pixel);
 - Current coordinate ranges of the visible scroll area (xLeft .. xRight : yTop .. yBottom);
 - The current zoom factor in percent;
-- The snap mode (either + → / on snapping to lines or + → ▪ on snapping to points only).
+- The snap mode (either "+ → /" on snapping to lines or "+ → ▪" on snapping to points only).
 
 ### Zooming support
 - Numpad-`+` or Ctrl-Numpad-`+` zoom in;
@@ -124,7 +124,7 @@ The context menu offers several navigation (scolling), zooming, visibility, and 
   - `Z`:  **Zoom to the bounds** → Zooms out (or in) such that the entire reachable drawing fills the Turtleizer canvas (unless zoom factor limits would be exceded);
 - Visibility
   - `A`:  **Make all drawing visible** → Transforms the drawing such that parts of the drawing with negative turtle coordinates get visible, i.e. become reachable for zooming and scrolling;
-  - `O`:  **Show axes of coordinates** → If enabled, a cross of dashed lines will be drawn through the turtl coordinate origin (only visible if drawing parts in negative quadrants were made visible, see 'A' above);
+  - `O`:  **Show axes of coordinates** → If enabled, a cross of dashed lines will be drawn through the turtle coordinate origin (only visible if drawing parts in negative quadrants were made visible, see `A` above);
   - `T`:  **Show turtle** → Toggles the visibility of the standard turtle (corresponds to turtle commands `hideTurtle()` and `showTurtle()`, respectively);
   - `B`:  **Set background colour ...** → Opens a colour dialog allowing to change the turtle canvas background (corresponds to turtle command `setBackground(r,g,b)`);
   - `S`:  **Show statusbar** → Shows/hides the statusbar (to hide it may accelerate drawing and enlarges the scroll viewport);
