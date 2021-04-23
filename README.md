@@ -128,10 +128,10 @@ The context menu offers several navigation (scolling), zooming, visibility, and 
   - `T`:  **Show turtle** → Toggles the visibility of the standard turtle (corresponds to turtle commands `hideTurtle()` and `showTurtle()`, respectively);
   - `B`:  **Set background colour ...** → Opens a colour dialog allowing to change the turtle canvas background (corresponds to turtle command `setBackground(r,g,b)`);
   - `S`:  **Show statusbar** → Shows/hides the statusbar (to hide it may accelerate drawing and enlarges the scroll viewport);
+- Measuring
   - `C`:  **Pop up coordinates** → Enables or disables the tooltip that displays the turtle coordnate at the current mouse position (while dragging, the measuring tooltip will be shown no matter whether this option is on or off);
   - `L`:  **Snap to lines (else: points only)** → Toggles between the two snapping modes (either to any point along the nearest line or to start and end points only);
   - `R`:  **Set measuring snap radius** → Opens an input dialog with spinner to modify the snp radius for measuring;
-  - `U`:  **Update on every turtle action** → Forces the turtle to invalidate the screen after every single drawing activity (otherwise some refresh steps are omitted with the growing number of lines to be redrawn in order to improve responsivity);
 - Graphics export
   - `X`:  **Export drawing items as CSV ...** → Saves the triples of start point, end point, and colour for all drawn lines of all turtles into a comma-separated values files (the column separator can be chosen);
   - Ctrl-`S`: **Export drawing as PNG ...** → Saves the drawing as PNG file;
