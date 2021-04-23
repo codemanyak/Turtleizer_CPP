@@ -154,8 +154,8 @@ const TurtleCanvas::MenuDef TurtleCanvas::MENU_DEFINITIONS[] = {
 	{TEXT("Snap lines (else: points only)\tL"), {FVIRTKEY, LOBYTE(VkKeyScanA('L'))}, TurtleCanvas::handleToggleSnap, true},
 	{TEXT("Set measuring snap radius ...\tR"), {FVIRTKEY, LOBYTE(VkKeyScanA('R'))}, TurtleCanvas::handleSetSnapRadius, false},
 	{NULL, {}, nullptr, false},
-	{TEXT("Update on every turtle action\tU"), {FVIRTKEY, LOBYTE(VkKeyScanA('U'))}, TurtleCanvas::handleToggleUpdate, true},
-	{NULL, {}, nullptr, false},
+	//{TEXT("Update on every turtle action\tU"), {FVIRTKEY, LOBYTE(VkKeyScanA('U'))}, TurtleCanvas::handleToggleUpdate, true},
+	//{NULL, {}, nullptr, false},
 	{TEXT("Export drawing items as CSV ...\tX"), {FVIRTKEY, LOBYTE(VkKeyScanA('X'))}, TurtleCanvas::handleExportCSV, false},
 	{TEXT("Export drawing as PNG ...\tCtrl+S"), {FCONTROL | FVIRTKEY, LOBYTE(VkKeyScanA('S'))}, TurtleCanvas::handleExportPNG, false},
 	{TEXT("Export drawing as SVG ...\tV"), {FVIRTKEY, LOBYTE(VkKeyScanA('V'))}, TurtleCanvas::handleExportSVG, false}
