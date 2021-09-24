@@ -1,5 +1,5 @@
 # Turtleizer_CPP
-A Turtle graphic library in C++, functionally compatible with the Turtleizer module of [Structorizer](https://github.com/fesch/Structorizer.Desktop).
+A Turtle graphic library in C++, functionally compatible with the [Turtleizer](https://help.structorizer.fisch.lu/index.php?menu=93) module of [Structorizer](https://github.com/fesch/Structorizer.Desktop).
 
 This little project is just a makeshift static library based on gdiplus and was initiated to get turtle algorithms created in [Structorizer](https://structorizer.fisch.lu) and exported to C++ working with an equivalent behaviour. The source relies on WinAPI functions and Windows classes.
 
