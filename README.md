@@ -93,7 +93,7 @@ Since version 11.0.0, the Turtleizer window offers enhanced GUI functionality in
 The status bar information consists of (from left to right):
 - Home position (x, y) of the standard turtle;
 - Current position (x, y) and orientation (in degrees from North) of the standard turtle;
-- Extension (maxX x maxY) of the (reachable part of) the drawings of all turtles (the reachable part is all that is positioned beneath and right of the top-left window pixel);
+- Extension (maxX x maxY) of (the reachable part of) the drawings of all turtles (the reachable part is all that is positioned beneath and right of the top-left window pixel);
 - Current coordinate ranges of the visible scroll area (xLeft .. xRight : yTop .. yBottom);
 - The current zoom factor in percent;
 - The snap mode (either "+ → /" on snapping to lines or "+ → ▪" on snapping to points only).
