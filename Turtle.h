@@ -115,7 +115,7 @@ public:
 	 */
 	REAL getNearestPoint(const PointF& coord, bool betweenEnds, double radius, PointF& nearest) const;
 
-	// Draws the trayectory of this turtle (and possibly the turtle itself) in 2D graphics gr
+	// Draws the trajectory of this turtle (and possibly the turtle itself) in 2D graphics gr
 	void draw(Graphics& gr, bool drawAll = true, bool withImage = true);
 	// Draws this turtle (if visible) in 2D graphics gr
 	void drawImage(Graphics& gr) const;
@@ -136,7 +136,7 @@ private:
 	LPCWSTR	turtleImagePath;					// The derived turtle file path
 	UINT turtleWidth, turtleHeight;				// The turtle image extensions
 	Gdiplus::PointF pos;						// current turtle position
-	Gdiplus::RectF bounds;						// current bounds of the trayectory
+	Gdiplus::RectF bounds;						// current bounds of the trajectory
 	double orient;							// current orientation in degrees
 	Elements elements;						// List of lines drawn in this session
 	Color defaultColour;					// Default colour for line segments without explicit colour

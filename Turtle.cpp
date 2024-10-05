@@ -94,6 +94,7 @@ void Turtle::forward(double pixels, Color col)
 		if (this->elements.size() == 1) {
 			this->lastDrawn = this->elements.cbegin();
 		}
+		// Extend the bounds by the current position
 		RectF::Union(this->bounds, this->bounds, RectF(this->pos.X, this->pos.Y, 1, 1));
 	}
 	this->refresh(oldP);
@@ -120,6 +121,7 @@ void Turtle::fd(int pixels, Color col)
 		if (this->elements.size() == 1) {
 			this->lastDrawn = this->elements.cbegin();
 		}
+		// Extend the bounds by the current position
 		RectF::Union(this->bounds, this->bounds, RectF(this->pos.X, this->pos.Y, 1, 1));
 	}
 	this->refresh(oldP);
