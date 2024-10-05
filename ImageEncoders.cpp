@@ -9,15 +9,16 @@
  *
  * @author William Sherif
  * @author Kay Gürtzig
- * Version: 11.0.0 (covering capabilities of Structorizer 3.30-12, functional GUI)
+ * Version: 11.0.1 (covering capabilities of Structorizer 3.30-12, functional GUI)
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2024-10-04   wcstok signature adapted, STATUS_TEXTS initialisation updated
  * 2021-04-21   Converted into a class (h+cpp), UNICODE adaptation fixed
  * 2016-04-20   created by William Sherif (https://gist.github.com/superwills/2f98fc72f07e61f9c04e56036a29f4b3)
  */
 
-TCHAR* ImageEncoders::STATUS_TEXTS[] = {
+const TCHAR* ImageEncoders::STATUS_TEXTS[] = {
   TEXT("Ok: The method call was successful."),
   TEXT("GenericError: There was an error on the method call, which is identified as something other than those defined by the other elements of this enumeration."),
   TEXT("InvalidParameter: One of the arguments passed to the method was not valid."),
@@ -91,8 +92,10 @@ bool ImageEncoders::InFileTypesList(const TCHAR* ext, const TCHAR* filetypesList
 {
     const TCHAR* delimiters = TEXT("*.;");
 #ifdef UNICODE
-    TCHAR* dup = wcsdup(filetypesList); // We have to form a writeable copy of the FileTypesList
-    TCHAR* tok = wcstok(dup, delimiters); // 1st call is on dup, subsequent on NULL.
+    TCHAR* wcstokBuf = NULL;
+    TCHAR* dup = _wcsdup(filetypesList); // We have to form a writeable copy of the FileTypesList
+#pragma warning(suppress : 4996)
+    TCHAR* tok = wcstok(dup, delimiters, &wcstokBuf); // 1st call is on dup, subsequent on NULL.
 #else
     TCHAR* dup = strdup(filetypesList); // We have to form a writeable copy of the FileTypesList
     TCHAR* tok = strtok(dup, delimiters); // 1st call is on dup, subsequent on NULL.
@@ -110,7 +113,8 @@ bool ImageEncoders::InFileTypesList(const TCHAR* ext, const TCHAR* filetypesList
         else  // Pull the next token
              // wcstok/strtok retains state, so we pass NULL to use last tokenized string
 #ifdef UNICODE
-            tok = wcstok(NULL, delimiters);
+#pragma warning(suppress : 4996)
+            tok = wcstok(NULL, delimiters, &wcstokBuf);
 #else
             tok = strtok(NULL, delimiters);
 #endif /*UNICODE*/
@@ -124,7 +128,7 @@ CLSID ImageEncoders::GetCLSIDForExtension(const TCHAR* ext)
     CLSID clsid = CLSID_NULL; // Start with assuming invalid clsid.
 
     // Use a case-insensitive comparison
-    for (int i = 0; i < NumberOfEncoders; i++)
+    for (unsigned int i = 0; i < NumberOfEncoders; i++)
     {
         if (InFileTypesList(ext, imageCodecs[i].FilenameExtension))
         {
@@ -140,10 +144,10 @@ CLSID ImageEncoders::GetCLSIDForExtension(const TCHAR* ext)
 CLSID ImageEncoders::GetCLSIDByMime(const TCHAR* mimetype)
 {
     CLSID clsid = CLSID_NULL;
-    for (int i = 0; i < NumberOfEncoders; i++)
+    for (unsigned int i = 0; i < NumberOfEncoders; i++)
     {
         // Straight comparison with listed mime type.
-        if (!wcsicmp(mimetype, imageCodecs[i].MimeType))
+        if (!_wcsicmp(mimetype, imageCodecs[i].MimeType))
         {
             clsid = imageCodecs[i].Clsid;
             break;
@@ -183,7 +187,7 @@ bool ImageEncoders::Save(Gdiplus::Image* im, TCHAR* filename)
 }
 
 
-void ImageEncoders::showMessage(TCHAR* fmt, TCHAR* title, int options, va_list args)
+void ImageEncoders::showMessage(const TCHAR* fmt, const TCHAR* title, int options, va_list args)
 {
 	TCHAR buf[1024];
 	int index = wvsprintf(buf, fmt, args);
@@ -193,21 +197,21 @@ void ImageEncoders::showMessage(TCHAR* fmt, TCHAR* title, int options, va_list a
 	MessageBox(HWND_DESKTOP, buf, title, options);
 }
 
-void ImageEncoders::info(TCHAR* fmt, ...)
+void ImageEncoders::info(const TCHAR* fmt, ...)
 {
 	va_list list;
 	va_start(list, fmt);
 	showMessage(fmt, TEXT("Info"), MB_OK | MB_ICONINFORMATION, list);
 }
 
-void ImageEncoders::error(TCHAR* fmt, ...)
+void ImageEncoders::error(const TCHAR* fmt, ...)
 {
 	va_list list;
 	va_start(list, fmt);
 	showMessage(fmt, TEXT("Error"), MB_OK | MB_ICONERROR, list);
 }
 
-TCHAR* ImageEncoders::getStatusString(Gdiplus::Status status)
+const TCHAR* ImageEncoders::getStatusString(Gdiplus::Status status)
 {
     if (status < 0 || status > Gdiplus::Status::PropertyNotSupported + 1) // ProfileNotFound may not be there
         status = (Gdiplus::Status)(Gdiplus::Status::PropertyNotSupported + 2); // gives last error (INVALID STATUS CODE)

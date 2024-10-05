@@ -11,10 +11,11 @@
  *
  * @author William Sherif
  * @author Kay Gürtzig
- * Version: 11.0.0 (covering capabilities of Structorizer 3.30-12, functional GUI)
+ * Version: 11.0.1 (covering capabilities of Structorizer 3.30-12, functional GUI)
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2024-10-04   String types declared const where necessary for initialisation with literals
  * 2021-04-21   Converted into a class (h+cpp), UNICODE adaptation fixed
  * 2016-04-20   created by William Sherif (https://gist.github.com/superwills/2f98fc72f07e61f9c04e56036a29f4b3)
  */
@@ -55,7 +56,7 @@ public:
     static bool Save(Gdiplus::Image* im, TCHAR* filename);
 
 private:
-    static TCHAR* STATUS_TEXTS[];
+    static const TCHAR* STATUS_TEXTS[];
     UINT byteSize;  // byteSize of encoders on system
     UINT NumberOfEncoders; // number of encoders on system
     Gdiplus::ImageCodecInfo* imageCodecs;   // singleton
@@ -67,19 +68,19 @@ private:
     // @param title - the message box title string
     // @param options - a combination of the uType codes of the winapi function MessageBox
     // @param args - the values to be inserted into the format string fmt 
-    static void showMessage(TCHAR* fmt, TCHAR* title, int options, va_list args);
+    static void showMessage(const TCHAR* fmt, const TCHAR* title, int options, va_list args);
 
     // Convenience wrapper for showMessage with error title and error icon
-    static void error(TCHAR* fmt, ...);
+    static void error(const TCHAR* fmt, ...);
 
     // Convenience wrapper for showMessage with info title and info icon
-    static void info(TCHAR* fmt, ...);
+    static void info(const TCHAR* fmt, ...);
 
     // Retrieves the appropriate text for the given GDI+ status value
     // 
     // @param status - a GDI+ status id
     // @returns the pointer to a verbose status description (in English)
-    static TCHAR* getStatusString(Gdiplus::Status status);
+    static const TCHAR* getStatusString(Gdiplus::Status status);
 
 };
 

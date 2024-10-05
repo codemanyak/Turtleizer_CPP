@@ -11,7 +11,7 @@
  * (http://structorizer.fisch.lu) for a simple C++ environment on Windows (WinAPI)
  *
  * Author: Kay Gürtzig
- * Version: 11.0.0
+ * Version: 11.0.1
  *
  * Usage:
  * 1. Configure a link to the compiled library (Turtleizer.lib) in your (Console) application
@@ -80,6 +80,8 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2024-10-05   VERSION 11.0.1: Type of IDS_STATUSBAR modified (const int -> const UINT),
+ *              declaration of unimplemented method onPaint() commented out; isDirty() removed
  * 2021-04-21   VERSION 11.0.0: GUI extensions according to #6 (~ Structorizer 3.31)
  * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
  * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
@@ -217,9 +219,6 @@ public:
 	void updateWindow(bool automatic = true);
 	// Refresh the window (i. e. invalidate the region rect) 
 	void refresh(const RectF& rect, int nElements);
-	// Returns tre if the entire drawing are must be completely redrawn (beacuse e.g.
-	// the window background has changed or some turtle cleared its trayectory
-	bool isDirty() const;
 
 	// Creates and adds a new turtle symbolized by the the icon specifed by the given imagPath
 	// at the given position to the Turtleizer
@@ -237,7 +236,7 @@ private:
 #endif /*UNICODE*/
 	static const NameType WCLASS_NAME;			// Name of the window class
 	static const Color colourTable[TC_VIOLET + 1];	// Look-up table for colour codes
-	static const int IDS_STATUSBAR = 21000;		// Identifier for the status bar
+	static const UINT IDS_STATUSBAR = 21000u;	// Identifier for the status bar
 	static const int STATUSBAR_ICON_IDS[];		// Ids of status bar part icons (also specifying the part count)
 	static Turtleizer* pInstance;				// The singleton instance
 	ULONG_PTR gdiplusToken;						// Token of the GDI+ session
@@ -255,8 +254,9 @@ private:
 	bool showStatusbar;						// Visibility of the statusbar
 	// Hidden constructor - use Turtleizer::startUp() to create an instance!
 	Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance = NULL);
-	// Callback method for refresh (OnPaint event)
-	VOID onPaint(HDC hdc);
+	// Callback method for refresh (OnPaint event) - obsolete
+	//VOID onPaint(HDC hdc);
+
 	// START KGU 2021-03-28: Enh. #6 GUI extensions
 	// Updates the information on the status bar
 	void updateStatusbar();

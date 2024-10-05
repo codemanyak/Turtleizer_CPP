@@ -1,4 +1,4 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 #include "Turtleizer.h"
 #include "resource.h"
 /*
@@ -17,6 +17,8 @@
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2024-10-05   VERSION 11.0.1: Explicit casts to avoid numeric conversion warnings,
+ *              constructor accomplished
  * 2021-04-05   VERSION 11.0.0: Additions for #6 (GUI functionality ~ Structorizer 3.31 added)
  * 2019-07-02   VERSION 10.0.1: Fixed #1 (environment-dependent char array type), #2
  * 2018-10-23   VERSION 10.0.0: Now semantic version numbering with Version class.
@@ -43,7 +45,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <sstream>
-// Precaution for VS2012
+ // Precaution for VS2012
 #ifndef _MATH_DEFINES_DEFINED
 #define M_PI 3.14159265358979323846
 #endif /*_MATH_DEFINES_DEFINED*/
@@ -53,7 +55,7 @@
 #define WIDEN(x) WIDEN2(x)
 #define __WFILE__ WIDEN(__FILE__)
 
-const Turtleizer::Version Turtleizer::VERSION(11, 0, 0);
+const Turtleizer::Version Turtleizer::VERSION(11, 0, 1);
 
 const Turtleizer::NameType Turtleizer::WCLASS_NAME = TEXT("Turtleizer");
 
@@ -93,11 +95,13 @@ HINSTANCE get_hInstance()
 
 Turtleizer::Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, HINSTANCE hInstance)
 	: hWnd(NULL)
+	, pCanvas(NULL)
 	, hStatusbar(NULL)
 	, gdiplusToken(NULL)
 	, backgroundColour(Color::White)
 	, showStatusbar(true)
 	, statusbarPartWidths(nullptr)
+	, msg{NULL, 0u, 0u, 0L, 0}
 {
 	// Initialize GDI+.
 	GdiplusStartup(&this->gdiplusToken, &this->gdiplusStartupInput, NULL);
@@ -107,16 +111,16 @@ Turtleizer::Turtleizer(String caption, unsigned int sizeX, unsigned int sizeY, H
 	}
 
 	WNDCLASS wndClass = { 0 };
-	wndClass.style          = CS_HREDRAW | CS_VREDRAW;
-	wndClass.lpfnWndProc    = Turtleizer::WndProc;
-	wndClass.cbClsExtra     = 0;
-	wndClass.cbWndExtra     = 0;
-	wndClass.hInstance      = hInstance;
-	wndClass.hIcon          = LoadIcon(NULL, IDI_APPLICATION);
-	wndClass.hCursor        = LoadCursor(NULL, IDC_ARROW);
-	wndClass.hbrBackground  = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	wndClass.lpszMenuName   = NULL;
-	wndClass.lpszClassName  = WCLASS_NAME;
+	wndClass.style = CS_HREDRAW | CS_VREDRAW;
+	wndClass.lpfnWndProc = Turtleizer::WndProc;
+	wndClass.cbClsExtra = 0;
+	wndClass.cbWndExtra = 0;
+	wndClass.hInstance = hInstance;
+	wndClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wndClass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+	wndClass.lpszMenuName = NULL;
+	wndClass.lpszClassName = WCLASS_NAME;
 
 	RegisterClass(&wndClass);
 
@@ -385,7 +389,7 @@ Turtle* Turtleizer::addNewTurtle(int x, int y, LPCWSTR imagePath)
 
 
 LRESULT CALLBACK Turtleizer::WndProc(HWND hWnd, UINT message,
-   WPARAM wParam, LPARAM lParam)
+	WPARAM wParam, LPARAM lParam)
 {
 	HDC          hdc;
 	PAINTSTRUCT  ps;
@@ -393,7 +397,7 @@ LRESULT CALLBACK Turtleizer::WndProc(HWND hWnd, UINT message,
 #if DEBUG_PRINT
 	printf("Callback from Window %x started with message ", hWnd);
 #endif /*DEBUG_PRINT*/
-	switch(message)
+	switch (message)
 	{
 	case WM_PAINT:
 #if DEBUG_PRINT
@@ -405,7 +409,7 @@ LRESULT CALLBACK Turtleizer::WndProc(HWND hWnd, UINT message,
 		EndPaint(hWnd, &ps);
 		pInstance->updateStatusbar();
 		return 0;
-	// START KGU 2021-03-28/04-02: Enh. #6
+		// START KGU 2021-03-28/04-02: Enh. #6
 	case WM_SIZE:
 	{
 		// Resize status bar
@@ -536,12 +540,12 @@ void Turtleizer::updateStatusbar()
 			// TODO Consider icon widths (in case there are icons)
 			for (int i = 0; i < nParts; i++) {
 				SendMessage(this->hStatusbar, SB_GETTEXT, i, (LPARAM)statusBuffer);
-				grsb.MeasureString(statusBuffer, wcslen(statusBuffer), pFont, PointF(0.0f, 0.0f), &bounds);
+				grsb.MeasureString(statusBuffer, (INT)wcslen(statusBuffer), pFont, PointF(0.0f, 0.0f), &bounds);
 				if (bounds.Width > this->statusbarPartWidths[i]
-					|| bounds.Width < this->statusbarPartWidths[i]/2) {
+					|| bounds.Width < this->statusbarPartWidths[i] / 2) {
 					resize = true;
 				}
-				sepPositions[i] = pos += bounds.Width + 1;
+				sepPositions[i] = pos += (int)bounds.Width + 1;
 			}
 			if (resize) {
 				SendMessage(this->hStatusbar, SB_SETPARTS, nParts, (LPARAM)&sepPositions);
@@ -563,7 +567,7 @@ bool Turtleizer::snapToNearestPoint(PointF& coord, bool onLines, REAL radius) co
 {
 	REAL minDist = INFINITY;
 	PointF nearest;
-	for (Turtle *pTurtle : turtles) {
+	for (Turtle* pTurtle : turtles) {
 		PointF nearPt;
 		REAL dist = pTurtle->getNearestPoint(coord, onLines, radius, nearPt);
 		if (dist == 0) {
@@ -605,7 +609,7 @@ DWORD WINAPI Turtleizer::interact(LPVOID lpParam)
 
 // Member method 
 void Turtleizer::listen() {
-	while(GetMessage(&this->msg, NULL, 0, 0))
+	while (GetMessage(&this->msg, NULL, 0, 0))
 	{
 		if (!this->pCanvas->translateAccelerators(&this->msg))
 		{

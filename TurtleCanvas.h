@@ -13,10 +13,11 @@
  * Turtle objects may be created to share the drawing area.
  *
  * Author: Kay Gürtzig
- * Version: 11.0.0 (covering capabilities of Structorizer 3.30-12, functional GUI)
+ * Version: 11.0.1 (covering capabilities of Structorizer 3.30-12, functional GUI)
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2024-10-04   Type modifications at MenuDef and chooseFileName(...)
  * 2021-04-20   CSV separator choice and coordinate input dialog implemented 
  * 2021-04-02   Scrolling, zooming, and background choice implemented
  * 2021-03-31   created for VERSION 11.0.0 (to address the scrollbar mechanism, #6)
@@ -76,7 +77,7 @@ private:
 	static const unsigned short N_CSV_SEPARATORS = 5;
 	// Menudefinition structure
 	struct MenuDef {
-		LPTSTR caption;
+		LPCTSTR caption;
 		ACCEL accelerator;
 		BOOL(*method)(bool);
 		bool isCheck;
@@ -166,7 +167,7 @@ private:
 	//    and returns the index of the pure file name (without path) into the TCHAR
 	//    array filename if successful, otherwise (i.e. if the user cancels or the
 	//    call simply fails) returns 0xffffffff
-	WORD chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName,
+	WORD chooseFileName(LPCTSTR filters, LPCTSTR defaultExt, LPTSTR fileName,
 		LPOFNHOOKPROC lpHookProc = NULL, LPDLGTEMPLATE lpdt = NULL);
 	// Callback method for refresh (WM_PAINT message event)
 	VOID onPaint();

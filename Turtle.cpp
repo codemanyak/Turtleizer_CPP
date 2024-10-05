@@ -10,10 +10,11 @@
  * Turtle objects may be created to share the drawing area.
  *
  * Author: Kay Gürtzig
- * Version: 11.0.0 (covering capabilities of Structorizer 3.31, functional GUI)
+ * Version: 11.0.1 (covering capabilities of Structorizer 3.31, functional GUI)
  *
  * History (add at top):
  * --------------------------------------------------------
+ * 2024-10-05   VERSION 11.0.1: Conversions REAL <-> double avoided
  * 2021-04-06   VERSION 11.0.0: Method draw decomposed to support memory HDC / bitblt
  * 2021-04-05   VERSION 11.0.0: New method for SVG export, nearest point search
  * 2021-04-02   VERSION 11.0.0: Enh. #6 (tracking of the bounds and new internal methods)
@@ -24,6 +25,7 @@
  * 2016-12-09   Created for VERSION 6
  */
 
+#define _CRT_SECURE_NO_WARNINGS
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <cstring>
@@ -260,7 +262,7 @@ void Turtle::refresh(const PointF& oldPos, bool forceIconSize) const
 	REAL bottom = ceil(max(oldPos.Y, this->pos.Y)) + halfIconSize;
 	RectF rect(left, top, right - left, bottom - top);
 	// END KGU 2021-04-02
-	this->pTurtleizer->refresh(rect, this->elements.size());
+	this->pTurtleizer->refresh(rect, (int)this->elements.size());
 }
 
 // Composes a file path from the path of this source file (project
@@ -321,7 +323,7 @@ void Turtle::draw(Graphics& gr, bool drawAll, bool withImage)
 		this->nDrawn = 0;
 		this->lastDrawn = this->elements.cbegin();
 	}
-	int nElements = this->elements.size();
+	unsigned int nElements = (unsigned int)this->elements.size();
 	Elements::const_iterator it(this->lastDrawn);
 	if (nElements == this->nDrawn) {
 		return;
@@ -505,8 +507,8 @@ REAL Turtle::TurtleLine::getNearestPoint(const PointF& pt, bool betweenEnds, Poi
 		// We abuse a point for the direction vector
 		PointF dvec(x2 - x1, y2 - y1);
 		PointF pvec(pt.X - x1, pt.X - y1);
-		double dlen2 = (dvec.X * dvec.X + dvec.Y * dvec.Y);
-		double param = (pvec.X * dvec.X + pvec.Y * dvec.Y) / dlen2;
+		REAL dlen2 = (dvec.X * dvec.X + dvec.Y * dvec.Y);
+		REAL param = (pvec.X * dvec.X + pvec.Y * dvec.Y) / dlen2;
 		if (param < 0) {
 			nearest.X = x1;
 			nearest.Y = y1;
@@ -519,13 +521,13 @@ REAL Turtle::TurtleLine::getNearestPoint(const PointF& pt, bool betweenEnds, Poi
 			nearest.X = x1 + param * dvec.X;
 			nearest.Y = y1 + param * dvec.Y;
 		}
-		double distX = nearest.X - pt.X;
-		double distY = nearest.Y - pt.Y;
+		REAL distX = nearest.X - pt.X;
+		REAL distY = nearest.Y - pt.Y;
 		return (REAL)sqrt(distX * distX + distY * distY);
 	}
 	else {
-		double distX = x1 - pt.X;
-		double distY = y1 - pt.Y;
+		REAL distX = x1 - pt.X;
+		REAL distY = y1 - pt.Y;
 		REAL dist1 = (REAL)sqrt(distX * distX + distY * distY);
 		distX = x2 - pt.X;
 		distY = y2 - pt.Y;

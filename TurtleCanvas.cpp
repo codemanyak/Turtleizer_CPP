@@ -13,10 +13,11 @@
  * Turtle objects may be created to share the drawing area.
  *
  * Author: Kay Gürtzig
- * Version: 11.0.0 (covering capabilities of Structorizer 3.31, functional GUI)
+ * Version: 11.0.1 (covering capabilities of Structorizer 3.31, functional GUI)
  *
  * History (add on top):
  * --------------------------------------------------------
+ * 2024-10-05   Explicit casts to avoid compiler warnings on numeric conversion
  * 2021-04-21   Snap radius dialog implemented
  * 2021-04-20   Coordinate input dialog implemented (still without icon and with odd font)
  * 2021-04-19   Separator choice for CSV export implemented (still with odd font)
@@ -264,11 +265,19 @@ TurtleCanvas::TurtleCanvas(Turtleizer& frame, HWND hFrame)
 		this->hCanvas, NULL, this->hInstance, NULL);
 
 	// Associate the tooltip with the measuring window
+	TCHAR tooltip[8];
+#if UNICODE
+	swprintf(
+#else
+	sprintf(
+#endif /*UNICODE*/
+		tooltip, ARRAYSIZE(tooltip), TEXT("(0, 0)")
+	);
 	this->tooltipInfo.cbSize = sizeof(TOOLINFO);
 	this->tooltipInfo.uFlags = TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE;
 	this->tooltipInfo.hwnd = this->hCanvas;
 	this->tooltipInfo.uId = (UINT_PTR)this->hCanvas;
-	this->tooltipInfo.lpszText = TEXT("(0, 0)");
+	this->tooltipInfo.lpszText = tooltip;
 	this->tooltipInfo.hinst = this->hInstance;
 
 	//GetClientRect(this->hCanvas, &this->tooltipInfo.rect);	// FIXME this sensible?
@@ -359,7 +368,6 @@ UINT_PTR TurtleCanvas::saveCSVHookProc(HWND hDlg, UINT msgId, WPARAM wParam, LPA
 	switch (msgId) {
 	case WM_INITDIALOG:
 	{
-		RECT rcFDialog;
 		SetDlgItemText(hDlg, 200, CSV_SEPARATOR);
 		for (unsigned short i = 0; i < N_CSV_SEPARATORS; i++) {
 			UINT idRBtn = IDC_CUST_START + i + 1;
@@ -376,7 +384,7 @@ UINT_PTR TurtleCanvas::saveCSVHookProc(HWND hDlg, UINT msgId, WPARAM wParam, LPA
 	case WM_NOTIFY:
 	{
 		OFNOTIFY* pNotify = (OFNOTIFY*)lParam;
-		UINT idFrom = pNotify->hdr.idFrom;
+		//UINT_PTR idFrom = pNotify->hdr.idFrom;	// Never used?
 		switch (pNotify->hdr.code) {
 		case CDN_FILEOK:
 			for (unsigned short i = 0; i < N_CSV_SEPARATORS; i++) {
@@ -448,10 +456,10 @@ BOOL CALLBACK TurtleCanvas::DialogCoordProc(HWND hDlg, UINT msgId, WPARAM wParam
 		case IDOK:
 		{
 			BOOL isOk = TRUE;
-			int coord[2] = { (int)pInstance->mouseCoord.X, (int)pInstance->mouseCoord.Y };
+			REAL coord[2] = { pInstance->mouseCoord.X, pInstance->mouseCoord.Y };
 			for (int i = 0; i < 2; i++) {
 				// Against the description, the argument gets non-zero if the conversion was successful
-				coord[i] = GetDlgItemInt(hDlg, IDC_CUST_START + 2 + 2 * i, &isOk, TRUE);
+				coord[i] = (REAL)GetDlgItemInt(hDlg, IDC_CUST_START + 2 + 2 * i, &isOk, TRUE);
 				if (!isOk) {
 					TCHAR text[40];
 					GetDlgItemText(hDlg, IDC_CUST_START + 2 + 2 * i, text, 40);
@@ -588,7 +596,7 @@ BOOL CALLBACK TurtleCanvas::DialogRadiusProc(HWND hDlg, UINT msgId, WPARAM wPara
 		{
 			BOOL isOk = TRUE;
 			// Against the description, the argument gets non-zero if the conversion was successful
-			int radius = GetDlgItemInt(hDlg, IDC_CUST_START + 1, &isOk, TRUE);
+			REAL radius = (REAL)GetDlgItemInt(hDlg, IDC_CUST_START + 1, &isOk, TRUE);
 			if (!isOk) {
 				TCHAR text[40];
 				GetDlgItemText(hDlg, IDC_CUST_START + 1, text, 40);
@@ -627,10 +635,10 @@ void TurtleCanvas::redraw(const RectF& rectF, int nElements)
 {
 	// Perform the coordinate transformations
 	RECT rect;
-	rect.left = (rectF.X + this->displacement.X) * this->zoomFactor - this->scrollPos.x;
-	rect.top = (rectF.Y + this->displacement.Y) * this->zoomFactor - this->scrollPos.y;
-	rect.right = rect.left + this->zoomFactor * rectF.Width;
-	rect.bottom = rect.top + this->zoomFactor * rectF.Height;
+	rect.left = (LONG)((rectF.X + this->displacement.X) * this->zoomFactor - this->scrollPos.x);
+	rect.top = (LONG)((rectF.Y + this->displacement.Y) * this->zoomFactor - this->scrollPos.y);
+	rect.right = rect.left + (LONG)(this->zoomFactor * rectF.Width);
+	rect.bottom = rect.top + (LONG)(this->zoomFactor * rectF.Height);
 	InvalidateRect(this->hCanvas, &rect, TRUE);
 	if (this->autoUpdate
 		// START KGU4 2016-11-02: Reduce degrading of drawing speed with growing history
@@ -870,7 +878,7 @@ VOID TurtleCanvas::onPaint()
 	//BitBlt()
 	// START KGU 2021-03-31: Enh. #6 Care for zooming, displacements and scroll viewport translation
 	//graphics.TranslateTransform(this->displacement.X, this->displacement.Y);
-	graphics.TranslateTransform(-this->scrollPos.x, -this->scrollPos.y);
+	graphics.TranslateTransform(-(REAL)this->scrollPos.x, -(REAL)this->scrollPos.y);
 	graphics.ScaleTransform(this->zoomFactor, this->zoomFactor);
 	graphics.TranslateTransform(this->displacement.X, this->displacement.Y);
 	// END KGU 2021-03-21
@@ -880,7 +888,7 @@ VOID TurtleCanvas::onPaint()
 		if (mustRedraw) {
 			grCompat.Clear(pFrame->backgroundColour);
 		}
-		grCompat.TranslateTransform(-this->scrollPos.x, -this->scrollPos.y);
+		grCompat.TranslateTransform(-(REAL)this->scrollPos.x, -(REAL)this->scrollPos.y);
 		grCompat.ScaleTransform(this->zoomFactor, this->zoomFactor);
 		grCompat.TranslateTransform(this->displacement.X, this->displacement.Y);
 
@@ -1152,7 +1160,7 @@ VOID TurtleCanvas::onMouseMove(WORD X, WORD Y, BOOL isButtonDown)
 				float deltaX = ptMouse.X - this->pDragStart->X;
 				float deltaY = ptMouse.Y - this->pDragStart->Y;
 				float dist = sqrtf(deltaX * deltaX + deltaY * deltaY);
-				float ori = atan2f(deltaX, deltaY) * 180 / M_PI;
+				float ori = (float)(atan2f(deltaX, deltaY) * 180 / M_PI);
 #if UNICODE
 				swprintf(
 #else
@@ -1282,7 +1290,7 @@ BOOL TurtleCanvas::handleGotoTurtle(bool testOnly)
 		return canDo;
 	}
 	Turtle* turtle0 = getInstance()->pFrame->turtles.front();
-	PointF posTurtle(turtle0->getX(), turtle0->getY());
+	PointF posTurtle((REAL)turtle0->getX(), (REAL)turtle0->getY());
 	getInstance()->scrollToCoord(posTurtle);
 	return TRUE;
 }
@@ -1299,8 +1307,8 @@ BOOL TurtleCanvas::handleGotoHome(bool testOnly)
 	}
 	// TODO scroll to home
 	PointF home(
-		pInstance->pFrame->home0.X,
-		pInstance->pFrame->home0.Y
+		(REAL)pInstance->pFrame->home0.X,
+		(REAL)pInstance->pFrame->home0.Y
 	);
 	pInstance->scrollToCoord(home);
 	return TRUE;
@@ -1623,8 +1631,8 @@ BOOL TurtleCanvas::handleExportPNG(bool testOnly)
 			bmp.bmBitsPixel = (BYTE)GetDeviceCaps(hdc, BITSPIXEL);
 			bmp.bmPlanes = (BYTE)GetDeviceCaps(hdc, PLANES);
 			RectF bounds = pFrame->getBounds();
-			bmp.bmWidth = bounds.Width;
-			bmp.bmHeight = bounds.Height;
+			bmp.bmWidth = (LONG)bounds.Width;
+			bmp.bmHeight = (LONG)bounds.Height;
 
 			// The width must be byte-aligned. 
 			bmp.bmWidthBytes = ((bmp.bmWidth + 15) & ~15) / 8;
@@ -1792,10 +1800,10 @@ TCHAR* TurtleCanvas::checkIntString(LPCTSTR text)
 	return pError;
 }
 
-WORD TurtleCanvas::chooseFileName(LPTSTR filters, LPTSTR defaultExt, LPTSTR fileName,
+WORD TurtleCanvas::chooseFileName(LPCTSTR filters, LPCTSTR defaultExt, LPTSTR fileName,
 	LPOFNHOOKPROC lpHookProc, LPDLGTEMPLATE lpdt)
 {
-	WORD nameIndex = 0xFFFFFFFF;	// start position of the mere file name within the path
+	WORD nameIndex = 0xFFFF;	// start position of the mere file name within the path
 	OPENFILENAME ofn;       // common dialog box structure
 
 	// Initialize OPENFILENAME
